@@ -1,0 +1,1 @@
+gemini mcp add -t http supabase "https://mcp.supabase.com/mcp?project_ref=mafwrknophptgwztnggw&read_only=true"
