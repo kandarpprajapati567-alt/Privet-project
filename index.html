@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProTrade AI - Premium Paper Trading</title>
+    <title>ProTrade AI - Next Gen Paper Trading</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
@@ -30,134 +30,93 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
         
-        /* Toast Notification Animation */
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
         .toast-enter { animation: slideIn 0.3s ease-out forwards; }
         
-        /* Mic pulse animation */
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
         .recording { animation: pulse-red 1.5s infinite; color: #ef4444 !important; }
+        
+        /* Ensuring chart doesn't collapse on mobile */
+        .chart-wrapper { min-height: 400px; }
+        @media (min-width: 1024px) {
+            .chart-wrapper { min-height: auto; flex: 1; }
+        }
     </style>
 </head>
-<body class="h-screen flex overflow-hidden flex-col md:flex-row">
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
 
-    <!-- Mobile Header -->
-    <header class="md:hidden flex items-center justify-between p-4 border-b border-border bg-surface/80 backdrop-blur-md z-20 shrink-0">
-        <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+    <header class="md:hidden flex items-center justify-between p-4 border-b border-border bg-surface z-20 shrink-0">
+        <h1 class="text-xl font-bold text-white flex items-center gap-2">
             <i data-lucide="activity" class="text-brand w-5 h-5"></i> ProTrade AI
         </h1>
         <div class="flex gap-3">
             <button id="mobile-history-btn" class="p-2 bg-border rounded-lg text-gray-300">
                 <i data-lucide="history" class="w-5 h-5"></i>
             </button>
-            <button id="mobile-menu-btn" class="p-2 bg-border rounded-lg text-gray-300">
-                <i data-lucide="menu" class="w-5 h-5"></i>
-            </button>
         </div>
     </header>
 
-    <!-- Sidebar -->
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-surface border-r border-border transform -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 flex flex-col">
-        <div class="p-5 hidden md:block">
-            <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                <i data-lucide="activity" class="text-brand w-6 h-6"></i> ProTrade
-            </h1>
-        </div>
-        
-        <nav class="flex-1 p-4 space-y-2 overflow-y-auto mt-12 md:mt-0">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 px-2">Markets</p>
-            <a href="#" class="flex items-center gap-3 bg-brand/10 text-brand px-3 py-2.5 rounded-lg transition-all text-sm font-medium border border-brand/20">
-                <i data-lucide="coins" class="w-4 h-4"></i> Gold (XAU/USD)
-            </a>
-            <a href="#" class="flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2.5 rounded-lg transition-all text-sm font-medium">
-                <i data-lucide="bar-chart-2" class="w-4 h-4"></i> NIFTY 50
-            </a>
-        </nav>
-        
-        <button id="close-sidebar" class="md:hidden absolute top-4 right-4 p-2 bg-border rounded-lg text-gray-300">
-            <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-    </aside>
-
-    <!-- Main Content -->
     <main class="flex-1 flex flex-col overflow-hidden relative">
         
-        <!-- Top Bar -->
         <header class="h-16 border-b border-border flex items-center justify-between px-4 md:px-6 bg-background shrink-0">
-            <div class="flex items-center gap-3 md:gap-4">
+            <div class="flex items-center gap-3">
                 <h2 class="text-lg md:text-xl font-bold">XAU/USD</h2>
-                <span id="live-price-change" class="px-2 py-1 bg-green-500/10 text-green-400 text-xs font-bold rounded-md border border-green-500/20">Live</span>
+                <span id="live-indicator" class="px-2 py-1 bg-green-500/10 text-green-400 text-xs font-bold rounded-md border border-green-500/20">Live</span>
             </div>
             <div class="flex items-center gap-4">
-                <button id="desktop-history-btn" class="hidden md:flex bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all items-center gap-2">
+                <button id="desktop-history-btn" class="hidden md:flex bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-2 rounded-lg text-sm transition-all items-center gap-2">
                     <i data-lucide="history" class="w-4 h-4"></i> History
                 </button>
                 <div class="text-right">
-                    <p class="text-[10px] text-gray-400 uppercase tracking-wider">Paper Balance</p>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-wider">Balance</p>
                     <p class="text-sm md:text-base font-bold text-green-400" id="wallet-balance">$100,000.00</p>
                 </div>
             </div>
         </header>
 
-        <!-- Trading & AI Area -->
-        <div class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <div class="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
             
-            <!-- Left: Chart & Trading Controls -->
-            <div class="flex-1 flex flex-col p-2 md:p-4 space-y-3 overflow-y-auto">
+            <div class="flex-1 flex flex-col p-2 md:p-4 gap-3">
                 
-                <!-- Engine Controls -->
-                <div class="bg-surface border border-border p-3 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-sm shrink-0">
-                    <div class="flex items-center gap-2">
-                        <button id="play-btn" class="p-2 bg-brand/20 text-brand rounded-lg transition-all">
-                            <i data-lucide="play" class="w-4 h-4"></i>
-                        </button>
-                        <button id="pause-btn" class="p-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg transition-all">
-                            <i data-lucide="pause" class="w-4 h-4"></i>
-                        </button>
-                        <span id="engine-status" class="text-xs text-brand ml-2 font-medium">Live Engine Running</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-sm font-bold text-white bg-background px-4 py-1.5 rounded-lg border border-border">
+                <div class="bg-surface border border-border p-3 rounded-xl flex justify-between items-center shrink-0">
+                    <span id="engine-status" class="text-xs text-brand font-medium flex items-center gap-2">
+                        <i data-lucide="zap" class="w-4 h-4"></i> Live Engine Active
+                    </span>
+                    <div class="text-sm font-bold bg-background px-4 py-1.5 rounded-lg border border-border">
                         Price: <span id="current-price-display" class="text-brand">1952.00</span>
                     </div>
                 </div>
 
-                <!-- Chart Container (Fixed min-height for Mobile) -->
-                <div id="chart-container" class="w-full flex-1 min-h-[350px] bg-background border border-border rounded-xl overflow-hidden relative shadow-inner"></div>
+                <div id="chart-container" class="w-full chart-wrapper bg-background border border-border rounded-xl relative shadow-inner"></div>
 
-                <!-- Trading Panel -->
                 <div class="bg-surface border border-border p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
                     <div class="flex items-center gap-3 w-full sm:w-auto justify-center">
-                        <label class="text-xs font-medium text-gray-400 uppercase">Qty:</label>
-                        <input type="number" id="qty" value="1" min="1" class="w-20 bg-background border border-border rounded-lg text-center font-bold text-lg py-2 focus:outline-none focus:border-brand transition-colors">
+                        <label class="text-xs font-medium text-gray-400">QTY:</label>
+                        <input type="number" id="qty" value="1" min="1" class="w-20 bg-background border border-border rounded-lg text-center font-bold text-lg py-2 focus:outline-none focus:border-brand">
                     </div>
                     <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <button id="btn-sell" class="flex-1 sm:w-32 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2">
-                            <i data-lucide="arrow-down-circle" class="w-4 h-4"></i> SELL
+                        <button id="btn-sell" class="flex-1 sm:w-32 bg-red-500/10 text-red-500 border border-red-500/30 py-3 rounded-lg font-bold text-sm flex justify-center items-center gap-2">
+                            <i data-lucide="arrow-down" class="w-4 h-4"></i> SELL
                         </button>
-                        <button id="btn-buy" class="flex-1 sm:w-32 bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/30 py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2">
-                            <i data-lucide="arrow-up-circle" class="w-4 h-4"></i> BUY
+                        <button id="btn-buy" class="flex-1 sm:w-32 bg-green-500/10 text-green-500 border border-green-500/30 py-3 rounded-lg font-bold text-sm flex justify-center items-center gap-2">
+                            <i data-lucide="arrow-up" class="w-4 h-4"></i> BUY
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Right: AI Mentor Side -->
-            <div class="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-border bg-surface flex flex-col h-[400px] lg:h-auto shrink-0">
-                <div class="p-4 border-b border-border bg-gradient-to-b from-brand/10 to-transparent flex justify-between items-center">
-                    <div>
-                        <h3 class="font-bold text-sm flex items-center gap-2">
-                            <i data-lucide="sparkles" class="w-4 h-4 text-brand"></i> Gemini AI Mentor
-                        </h3>
-                        <p class="text-[10px] text-gray-400 mt-1">Text & Voice Analysis</p>
-                    </div>
-                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <div class="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-border bg-surface flex flex-col h-[500px] lg:h-auto shrink-0">
+                <div class="p-4 border-b border-border bg-gradient-to-b from-brand/10 to-transparent">
+                    <h3 class="font-bold text-sm flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-brand"></i> Real Gemini AI
+                    </h3>
                 </div>
                 
                 <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-4">
@@ -166,18 +125,13 @@
                             <i data-lucide="bot" class="w-3 h-3 text-brand"></i>
                         </div>
                         <div class="bg-background border border-border p-3 rounded-xl rounded-tl-none text-sm text-gray-300">
-                            Namaste! Main aapka AI trading partner hu. Aap mujhse market ka trend pooch sakte hain ya microphone icon press karke voice command bhi de sakte hain.
+                            System Ready. Maine aapke backend ko connect kar liya hai. Aap trade analysis ke liye pooch sakte hain.
                         </div>
                     </div>
                 </div>
 
-                <div class="p-3 border-t border-border bg-surface relative flex items-center gap-2">
-                    <div class="relative flex-1">
-                        <input type="text" id="ai-input" placeholder="Type or use mic..." class="w-full bg-background border border-border rounded-lg pl-3 pr-10 py-2.5 text-sm focus:outline-none focus:border-brand transition-all">
-                        <button id="ai-mic" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-400 transition-colors p-1 rounded-full">
-                            <i data-lucide="mic" class="w-4 h-4"></i>
-                        </button>
-                    </div>
+                <div class="p-3 border-t border-border relative flex gap-2">
+                    <input type="text" id="ai-input" placeholder="Message Gemini..." class="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand">
                     <button id="ai-send" class="bg-brand text-white p-2.5 rounded-lg hover:bg-blue-600 transition-colors">
                         <i data-lucide="send" class="w-4 h-4"></i>
                     </button>
@@ -187,164 +141,40 @@
         </div>
     </main>
 
-    <!-- Transaction History Modal -->
-    <div id="history-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-center backdrop-blur-sm p-4">
-        <div class="bg-surface border border-border rounded-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
-            <div class="p-4 border-b border-border flex justify-between items-center bg-background">
-                <h3 class="font-bold text-lg flex items-center gap-2">
-                    <i data-lucide="history" class="w-5 h-5 text-brand"></i> Transaction History
-                </h3>
-                <button id="close-history" class="text-gray-400 hover:text-white p-1">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+    <div id="history-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-surface border border-border rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div class="p-4 border-b border-border flex justify-between items-center">
+                <h3 class="font-bold text-lg">Transaction History</h3>
+                <button id="close-history" class="text-gray-400 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="p-4 overflow-y-auto flex-1">
                 <table class="w-full text-sm text-left text-gray-300">
-                    <thead class="text-xs text-gray-500 uppercase bg-white/5">
-                        <tr>
-                            <th class="px-4 py-2 rounded-tl-lg">Type</th>
-                            <th class="px-4 py-2">Qty</th>
-                            <th class="px-4 py-2">Price</th>
-                            <th class="px-4 py-2 rounded-tr-lg">Total</th>
-                        </tr>
+                    <thead class="text-xs text-gray-500 bg-white/5">
+                        <tr><th>Type</th><th>Qty</th><th>Price</th><th>Total</th></tr>
                     </thead>
-                    <tbody id="history-table-body">
-                        <!-- Transactions will be injected here -->
-                    </tbody>
+                    <tbody id="history-table-body"></tbody>
                 </table>
-                <div id="empty-history" class="text-center py-8 text-gray-500 text-sm">No transactions yet. Start trading!</div>
             </div>
         </div>
     </div>
 
-    <!-- Toasts container -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
 
     <script>
-        // 1. Initialize Icons
         lucide.createIcons();
 
-        // 2. Global State for Trading
-        let balance = 100000.00;
-        let currentPrice = 1952.00;
-        let transactions = [];
-        let isEngineRunning = true;
+        /* --- 1. CONFIGURATION: LINK YOUR BACKEND HERE --- */
+        // Bhai, yahan par apne deployed gemini.js ka exact URL daalo (e.g., https://your-app.onrender.com/api/chat)
+        const GEMINI_BACKEND_URL = "http://localhost:3000/api/chat"; 
 
-        // 3. UI Interactions (Mobile Menu & Modals)
-        const sidebar = document.getElementById('sidebar');
-        document.getElementById('mobile-menu-btn').addEventListener('click', () => sidebar.classList.remove('-translate-x-full'));
-        document.getElementById('close-sidebar').addEventListener('click', () => sidebar.classList.add('-translate-x-full'));
-
-        const historyModal = document.getElementById('history-modal');
-        const openHistory = () => { historyModal.classList.remove('hidden'); renderHistory(); };
-        const closeHistory = () => historyModal.classList.add('hidden');
-        
-        document.getElementById('mobile-history-btn').addEventListener('click', openHistory);
-        document.getElementById('desktop-history-btn').addEventListener('click', openHistory);
-        document.getElementById('close-history').addEventListener('click', closeHistory);
-
-        // Utility: Custom Toast
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            const colorClass = type === 'buy' ? 'border-green-500 text-green-400' : (type === 'sell' ? 'border-red-500 text-red-400' : 'border-brand text-brand');
-            const icon = type === 'info' ? 'info' : 'check-circle';
-            toast.className = `toast-enter bg-surface border ${colorClass} p-3 rounded-lg shadow-lg flex items-center gap-2 text-sm font-bold min-w-[200px] backdrop-blur-md`;
-            toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i> ${message}`;
-            
-            document.getElementById('toast-container').appendChild(toast);
-            lucide.createIcons();
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                toast.style.transition = 'all 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // 4. Trading Logic (Buy/Sell/History/Balance)
-        function updateBalanceUI() {
-            document.getElementById('wallet-balance').innerText = `$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        }
-
-        function renderHistory() {
-            const tbody = document.getElementById('history-table-body');
-            const emptyMsg = document.getElementById('empty-history');
-            
-            if (transactions.length === 0) {
-                tbody.innerHTML = '';
-                emptyMsg.style.display = 'block';
-                return;
-            }
-            
-            emptyMsg.style.display = 'none';
-            tbody.innerHTML = transactions.map(t => `
-                <tr class="border-b border-white/5">
-                    <td class="px-4 py-3 font-bold ${t.type === 'BUY' ? 'text-green-400' : 'text-red-400'}">${t.type}</td>
-                    <td class="px-4 py-3">${t.qty}</td>
-                    <td class="px-4 py-3">$${t.price.toFixed(2)}</td>
-                    <td class="px-4 py-3">$${t.total.toFixed(2)}</td>
-                </tr>
-            `).join('');
-        }
-
-        function executeTrade(type) {
-            const qty = parseInt(document.getElementById('qty').value);
-            if (qty < 1 || isNaN(qty)) return showToast('Enter valid quantity', 'sell');
-            
-            const total = qty * currentPrice;
-
-            if (type === 'BUY') {
-                if (balance < total) return showToast('Insufficient Funds!', 'sell');
-                balance -= total;
-                showToast(`Bought ${qty} XAU/USD @ $${currentPrice.toFixed(2)}`, 'buy');
-            } else {
-                // In a real system, you'd check holdings. For paper trading, we add balance (shorting logic simplified).
-                balance += total;
-                showToast(`Sold ${qty} XAU/USD @ $${currentPrice.toFixed(2)}`, 'sell');
-            }
-            
-            transactions.unshift({ type, qty, price: currentPrice, total });
-            updateBalanceUI();
-        }
-
-        document.getElementById('btn-buy').addEventListener('click', () => executeTrade('BUY'));
-        document.getElementById('btn-sell').addEventListener('click', () => executeTrade('SELL'));
-
-        // Engine Play/Pause
-        const playBtn = document.getElementById('play-btn');
-        const pauseBtn = document.getElementById('pause-btn');
-        const engineStatus = document.getElementById('engine-status');
-
-        playBtn.addEventListener('click', () => {
-            isEngineRunning = true;
-            playBtn.className = "p-2 bg-brand/20 text-brand rounded-lg transition-all";
-            pauseBtn.className = "p-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg transition-all";
-            engineStatus.innerText = "Live Engine Running";
-            showToast('Market Live Simulation Resumed', 'info');
-        });
-
-        pauseBtn.addEventListener('click', () => {
-            isEngineRunning = false;
-            pauseBtn.className = "p-2 bg-brand/20 text-brand rounded-lg transition-all";
-            playBtn.className = "p-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg transition-all";
-            engineStatus.innerText = "Engine Paused";
-            engineStatus.className = "text-xs text-gray-400 ml-2 font-medium";
-            showToast('Market Paused', 'info');
-        });
-
-        // 5. Chart Initialization & Live Simulation
+        /* --- 2. Chart Logic --- */
         const chartContainer = document.getElementById('chart-container');
         
-        // Ensure container has dimensions before initializing
+        // Initialize chart with auto-sizing
         const chart = LightweightCharts.createChart(chartContainer, {
-            width: chartContainer.clientWidth,
-            height: chartContainer.clientHeight || 350,
             layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#737373' },
             grid: { vertLines: { color: '#262626' }, horzLines: { color: '#262626' } },
-            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-            rightPriceScale: { borderColor: '#262626' },
-            timeScale: { borderColor: '#262626', timeVisible: true, secondsVisible: false },
+            timeScale: { timeVisible: true }
         });
 
         const candlestickSeries = chart.addCandlestickSeries({
@@ -352,139 +182,150 @@
             wickUpColor: '#22c55e', wickDownColor: '#ef4444',
         });
 
-        // Initial Data setup
+        // Responsive Chart sizing
+        new ResizeObserver(entries => {
+            if (entries.length === 0 || entries[0].target !== chartContainer) return;
+            const newRect = entries[0].contentRect;
+            // Force exact width and height based on the container
+            chart.applyOptions({ width: newRect.width, height: newRect.height });
+        }).observe(chartContainer);
+
+        // Dummy Live Data Engine
         let currentTime = Math.floor(Date.now() / 1000);
-        let lastClose = 1952.00;
+        let currentPrice = 1952.00;
         const data = [];
         
-        for (let i = 60; i > 0; i--) {
-            let open = lastClose;
+        for (let i = 100; i > 0; i--) {
+            let open = currentPrice;
             let close = open + (Math.random() - 0.5) * 4;
             let high = Math.max(open, close) + Math.random() * 2;
             let low = Math.min(open, close) - Math.random() * 2;
             data.push({ time: currentTime - (i * 60), open, high, low, close });
-            lastClose = close;
+            currentPrice = close;
         }
         candlestickSeries.setData(data);
-        currentPrice = lastClose;
-        document.getElementById('current-price-display').innerText = currentPrice.toFixed(2);
-
-        // Resize observer for responsiveness
-        new ResizeObserver(entries => {
-            if (entries.length === 0 || entries[0].target !== chartContainer) return;
-            const newRect = entries[0].contentRect;
-            chart.applyOptions({ width: newRect.width, height: newRect.height });
-        }).observe(chartContainer);
-
-        // Live Market Tick Simulation
+        
+        // Live Engine Update
         setInterval(() => {
-            if (!isEngineRunning) return;
-            
-            // Create a new candle every minute, or update current candle
-            currentTime += 5; // advance 5 seconds
-            
-            let volatility = (Math.random() - 0.5) * 1.5;
-            currentPrice += volatility;
-            
+            currentTime += 5; 
+            currentPrice += (Math.random() - 0.5) * 1.5;
             document.getElementById('current-price-display').innerText = currentPrice.toFixed(2);
-            document.getElementById('current-price-display').className = volatility >= 0 ? "text-green-400" : "text-red-400";
             
-            // Update last candle in series
             const lastCandle = data[data.length - 1];
             lastCandle.close = currentPrice;
             if(currentPrice > lastCandle.high) lastCandle.high = currentPrice;
             if(currentPrice < lastCandle.low) lastCandle.low = currentPrice;
             
             candlestickSeries.update(lastCandle);
-            
-        }, 1500); // update every 1.5 seconds
+        }, 1500);
 
-        // 6. Gemini AI (Text & Voice Dual Implementation)
-        const aiInput = document.getElementById('ai-input');
-        const aiSend = document.getElementById('ai-send');
-        const aiMic = document.getElementById('ai-mic');
-        const chatBox = document.getElementById('chat-box');
+        /* --- 3. Trading & Modals --- */
+        let balance = 100000.00;
+        let transactions = [];
 
-        // AI Responses logic (Simple realistic mock)
-        function getAIResponse(text) {
-            const lowerText = text.toLowerCase();
-            if (lowerText.includes('buy') || lowerText.includes('sell')) return "Aapne trade ki baat ki. Chart par dekhiye, volatility thodi zyada hai. Apna risk manage karke chaliye!";
-            if (lowerText.includes('trend')) return "Abhi chart me minor consolidation dikh raha hai. Support levels ke aas-paas nazar rakhein.";
-            if (lowerText.includes('balance') || lowerText.includes('funds')) return `Aapka current paper balance $${balance.toLocaleString()} hai.`;
-            return "Main samajh gaya. Is current price level par RSI aur MACD jaise indicators se confirmation lena better hoga.";
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-enter bg-surface border border-brand p-3 rounded-lg text-sm font-bold text-white';
+            toast.innerText = msg;
+            document.getElementById('toast-container').appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
 
-        function sendMsg(text) {
+        document.getElementById('btn-buy').addEventListener('click', () => {
+            const qty = parseInt(document.getElementById('qty').value);
+            balance -= qty * currentPrice;
+            document.getElementById('wallet-balance').innerText = `$${balance.toLocaleString()}`;
+            transactions.unshift({ type: 'BUY', qty, price: currentPrice, total: qty * currentPrice });
+            showToast(`Bought ${qty} at $${currentPrice.toFixed(2)}`);
+        });
+
+        document.getElementById('btn-sell').addEventListener('click', () => {
+            const qty = parseInt(document.getElementById('qty').value);
+            balance += qty * currentPrice;
+            document.getElementById('wallet-balance').innerText = `$${balance.toLocaleString()}`;
+            transactions.unshift({ type: 'SELL', qty, price: currentPrice, total: qty * currentPrice });
+            showToast(`Sold ${qty} at $${currentPrice.toFixed(2)}`);
+        });
+
+        // History Modals
+        const histModal = document.getElementById('history-modal');
+        const renderHistory = () => {
+            document.getElementById('history-table-body').innerHTML = transactions.map(t => `
+                <tr class="border-b border-white/5">
+                    <td class="px-4 py-3 font-bold ${t.type === 'BUY' ? 'text-green-400' : 'text-red-400'}">${t.type}</td>
+                    <td class="px-4 py-3">${t.qty}</td>
+                    <td class="px-4 py-3">$${t.price.toFixed(2)}</td>
+                    <td class="px-4 py-3">$${t.total.toFixed(2)}</td>
+                </tr>
+            `).join('');
+            histModal.classList.remove('hidden');
+        };
+        
+        document.getElementById('mobile-history-btn').addEventListener('click', renderHistory);
+        document.getElementById('desktop-history-btn').addEventListener('click', renderHistory);
+        document.getElementById('close-history').addEventListener('click', () => histModal.classList.add('hidden'));
+
+        /* --- 4. Real Gemini Backend Connection --- */
+        const chatBox = document.getElementById('chat-box');
+        const aiInput = document.getElementById('ai-input');
+        const aiSend = document.getElementById('ai-send');
+
+        async function fetchGeminiResponse(userText) {
+            try {
+                // Connecting to your actual backend deployed API
+                const response = await fetch(GEMINI_BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // Ensure this JSON structure matches what your gemini.js expects
+                    body: JSON.stringify({ message: userText }) 
+                });
+                
+                if (!response.ok) throw new Error("Network response was not ok");
+                const data = await response.json();
+                
+                // Return whatever key your backend sends the message under
+                return data.reply || data.response || data.message || "Done."; 
+            } catch (error) {
+                console.error("AI fetch failed:", error);
+                return "Bhai, backend connect nahi hua. URL check karo apne HTML code mein (`GEMINI_BACKEND_URL`).";
+            }
+        }
+
+        async function handleSendMsg() {
+            const text = aiInput.value.trim();
             if (!text) return;
 
-            // User Message
-            const userMsg = document.createElement('div');
-            userMsg.className = 'flex justify-end';
-            userMsg.innerHTML = `<div class="bg-brand text-white p-3 rounded-xl rounded-tr-none text-sm max-w-[85%]">${text}</div>`;
-            chatBox.appendChild(userMsg);
-            
+            // 1. Add User Msg
+            chatBox.innerHTML += `<div class="flex justify-end"><div class="bg-brand text-white p-3 rounded-xl rounded-tr-none text-sm max-w-[85%]">${text}</div></div>`;
             aiInput.value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            // AI Typing Simulator
-            setTimeout(() => {
-                const response = getAIResponse(text);
-                const aiMsg = document.createElement('div');
-                aiMsg.className = 'flex gap-3';
-                aiMsg.innerHTML = `
-                    <div class="w-6 h-6 rounded bg-brand/20 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="bot" class="w-3 h-3 text-brand"></i>
-                    </div>
-                    <div class="bg-background border border-border p-3 rounded-xl rounded-tl-none text-sm text-gray-300 max-w-[85%]">
-                        ${response}
-                    </div>
-                `;
-                chatBox.appendChild(aiMsg);
-                lucide.createIcons();
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }, 800);
+            // 2. Add Loading State
+            const loadingId = 'loading-' + Date.now();
+            chatBox.innerHTML += `
+                <div id="${loadingId}" class="flex gap-3">
+                    <div class="w-6 h-6 rounded bg-brand/20 flex items-center justify-center flex-shrink-0"><i data-lucide="bot" class="w-3 h-3 text-brand"></i></div>
+                    <div class="bg-background border border-border p-3 rounded-xl rounded-tl-none text-sm text-gray-500 animate-pulse">Thinking...</div>
+                </div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+            lucide.createIcons();
+
+            // 3. Get Real AI Response
+            const aiResponseText = await fetchGeminiResponse(text);
+
+            // 4. Replace Loading State with Real Response
+            document.getElementById(loadingId).remove();
+            chatBox.innerHTML += `
+                <div class="flex gap-3">
+                    <div class="w-6 h-6 rounded bg-brand/20 flex items-center justify-center flex-shrink-0"><i data-lucide="bot" class="w-3 h-3 text-brand"></i></div>
+                    <div class="bg-background border border-border p-3 rounded-xl rounded-tl-none text-sm text-gray-300 max-w-[85%]">${aiResponseText}</div>
+                </div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+            lucide.createIcons();
         }
 
-        aiSend.addEventListener('click', () => sendMsg(aiInput.value.trim()));
-        aiInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMsg(aiInput.value.trim()); });
-
-        // Voice Command Setup (Web Speech API)
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'en-US'; // Can be set to 'hi-IN' for Hindi
-
-            recognition.onstart = function() {
-                aiMic.classList.add('recording');
-                aiInput.placeholder = 'Listening...';
-            };
-
-            recognition.onspeechend = function() {
-                aiMic.classList.remove('recording');
-                aiInput.placeholder = 'Type or use mic...';
-                recognition.stop();
-            };
-
-            recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript;
-                aiInput.value = transcript;
-                setTimeout(() => sendMsg(transcript), 500); // Auto send after voice recognition
-            };
-            
-            recognition.onerror = function(event) {
-                aiMic.classList.remove('recording');
-                aiInput.placeholder = 'Type or use mic...';
-                showToast('Microphone error: ' + event.error, 'sell');
-            };
-
-            aiMic.addEventListener('click', () => {
-                recognition.start();
-            });
-        } else {
-            aiMic.style.display = 'none'; // Hide if browser doesn't support
-            console.log('Speech Recognition API not supported in this browser.');
-        }
+        aiSend.addEventListener('click', handleSendMsg);
+        aiInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSendMsg(); });
 
     </script>
 </body>
