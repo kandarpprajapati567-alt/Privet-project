@@ -43,7 +43,6 @@
         }
         .recording { animation: pulse-red 1.5s infinite; color: #ef4444 !important; }
         
-        /* Ensuring chart doesn't collapse on mobile */
         .chart-wrapper { min-height: 400px; }
         @media (min-width: 1024px) {
             .chart-wrapper { min-height: auto; flex: 1; }
@@ -84,13 +83,12 @@
         <div class="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
             
             <div class="flex-1 flex flex-col p-2 md:p-4 gap-3">
-                
                 <div class="bg-surface border border-border p-3 rounded-xl flex justify-between items-center shrink-0">
                     <span id="engine-status" class="text-xs text-brand font-medium flex items-center gap-2">
                         <i data-lucide="zap" class="w-4 h-4"></i> Live Engine Active
                     </span>
                     <div class="text-sm font-bold bg-background px-4 py-1.5 rounded-lg border border-border">
-                        Price: <span id="current-price-display" class="text-brand">1952.00</span>
+                        Price: $<span id="current-price-display" class="text-brand">1952.00</span>
                     </div>
                 </div>
 
@@ -102,10 +100,10 @@
                         <input type="number" id="qty" value="1" min="1" class="w-20 bg-background border border-border rounded-lg text-center font-bold text-lg py-2 focus:outline-none focus:border-brand">
                     </div>
                     <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <button id="btn-sell" class="flex-1 sm:w-32 bg-red-500/10 text-red-500 border border-red-500/30 py-3 rounded-lg font-bold text-sm flex justify-center items-center gap-2">
+                        <button id="btn-sell" class="flex-1 sm:w-32 bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/30 py-3 rounded-lg font-bold text-sm flex justify-center items-center gap-2 transition-all">
                             <i data-lucide="arrow-down" class="w-4 h-4"></i> SELL
                         </button>
-                        <button id="btn-buy" class="flex-1 sm:w-32 bg-green-500/10 text-green-500 border border-green-500/30 py-3 rounded-lg font-bold text-sm flex justify-center items-center gap-2">
+                        <button id="btn-buy" class="flex-1 sm:w-32 bg-green-500/10 text-green-500 hover:bg-green-500/20 border border-green-500/30 py-3 rounded-lg font-bold text-sm flex justify-center items-center gap-2 transition-all">
                             <i data-lucide="arrow-up" class="w-4 h-4"></i> BUY
                         </button>
                     </div>
@@ -131,7 +129,7 @@
                 </div>
 
                 <div class="p-3 border-t border-border relative flex gap-2">
-                    <input type="text" id="ai-input" placeholder="Message Gemini..." class="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand">
+                    <input type="text" id="ai-input" placeholder="Message Gemini..." autocomplete="off" class="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand">
                     <button id="ai-send" class="bg-brand text-white p-2.5 rounded-lg hover:bg-blue-600 transition-colors">
                         <i data-lucide="send" class="w-4 h-4"></i>
                     </button>
@@ -141,18 +139,25 @@
         </div>
     </main>
 
-    <div id="history-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-center p-4">
+    <div id="history-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-center p-4 backdrop-blur-sm">
         <div class="bg-surface border border-border rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col">
             <div class="p-4 border-b border-border flex justify-between items-center">
                 <h3 class="font-bold text-lg">Transaction History</h3>
-                <button id="close-history" class="text-gray-400 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button id="close-history" class="text-gray-400 p-1 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="p-4 overflow-y-auto flex-1">
                 <table class="w-full text-sm text-left text-gray-300">
                     <thead class="text-xs text-gray-500 bg-white/5">
-                        <tr><th>Type</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+                        <tr>
+                            <th class="px-4 py-2">Type</th>
+                            <th class="px-4 py-2">Qty</th>
+                            <th class="px-4 py-2">Price</th>
+                            <th class="px-4 py-2">Total</th>
+                        </tr>
                     </thead>
-                    <tbody id="history-table-body"></tbody>
+                    <tbody id="history-table-body">
+                        <tr><td colspan="4" class="text-center py-4 text-gray-500">No transactions yet.</td></tr>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -161,16 +166,15 @@
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
 
     <script>
+        // Initialize Lucide Icons
         lucide.createIcons();
 
-        /* --- 1. CONFIGURATION: LINK YOUR BACKEND HERE --- */
-        // Bhai, yahan par apne deployed gemini.js ka exact URL daalo (e.g., https://your-app.onrender.com/api/chat)
-        const GEMINI_BACKEND_URL = "http://localhost:3000/api/chat"; 
+        /* --- 1. CONFIGURATION --- */
+        const GEMINI_BACKEND_URL = "http://localhost:3000/api/chat"; // Apna actual deployed URL yahan daalein
 
-        /* --- 2. Chart Logic --- */
+        /* --- 2. Chart Logic (FIXED) --- */
         const chartContainer = document.getElementById('chart-container');
         
-        // Initialize chart with auto-sizing
         const chart = LightweightCharts.createChart(chartContainer, {
             layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#737373' },
             grid: { vertLines: { color: '#262626' }, horzLines: { color: '#262626' } },
@@ -182,88 +186,146 @@
             wickUpColor: '#22c55e', wickDownColor: '#ef4444',
         });
 
-        // Responsive Chart sizing
+        // Make Chart Responsive
         new ResizeObserver(entries => {
             if (entries.length === 0 || entries[0].target !== chartContainer) return;
             const newRect = entries[0].contentRect;
-            // Force exact width and height based on the container
             chart.applyOptions({ width: newRect.width, height: newRect.height });
         }).observe(chartContainer);
 
-        // Dummy Live Data Engine
-        let currentTime = Math.floor(Date.now() / 1000);
+        // Generate Mock History Data
+        let currentTime = Math.floor(Date.now() / 1000) - (100 * 60); // Starts from past
         let currentPrice = 1952.00;
         const data = [];
         
-        for (let i = 100; i > 0; i--) {
+        for (let i = 0; i < 100; i++) {
+            currentTime += 60; // 1 minute per candle
             let open = currentPrice;
             let close = open + (Math.random() - 0.5) * 4;
             let high = Math.max(open, close) + Math.random() * 2;
             let low = Math.min(open, close) - Math.random() * 2;
-            data.push({ time: currentTime - (i * 60), open, high, low, close });
+            data.push({ time: currentTime, open, high, low, close });
             currentPrice = close;
         }
         candlestickSeries.setData(data);
         
-        // Live Engine Update
+        // Live Engine Update Logic (FIXED)
+        let tickCount = 0;
         setInterval(() => {
-            currentTime += 5; 
+            // Price variation simulation
             currentPrice += (Math.random() - 0.5) * 1.5;
             document.getElementById('current-price-display').innerText = currentPrice.toFixed(2);
             
             const lastCandle = data[data.length - 1];
-            lastCandle.close = currentPrice;
-            if(currentPrice > lastCandle.high) lastCandle.high = currentPrice;
-            if(currentPrice < lastCandle.low) lastCandle.low = currentPrice;
-            
-            candlestickSeries.update(lastCandle);
+            tickCount++;
+
+            // Create a new candle every 10 ticks (simulating timeframe interval)
+            if (tickCount > 10) {
+                currentTime += 60; // Increment time for new candle
+                const newCandle = { 
+                    time: currentTime, 
+                    open: lastCandle.close, 
+                    high: Math.max(lastCandle.close, currentPrice), 
+                    low: Math.min(lastCandle.close, currentPrice), 
+                    close: currentPrice 
+                };
+                data.push(newCandle);
+                candlestickSeries.update(newCandle);
+                tickCount = 0;
+            } else {
+                // Update current candle dynamically
+                lastCandle.close = currentPrice;
+                if(currentPrice > lastCandle.high) lastCandle.high = currentPrice;
+                if(currentPrice < lastCandle.low) lastCandle.low = currentPrice;
+                candlestickSeries.update(lastCandle);
+            }
         }, 1500);
 
-        /* --- 3. Trading & Modals --- */
+
+        /* --- 3. Trading & Modals (FIXED VALIDATIONS) --- */
         let balance = 100000.00;
         let transactions = [];
 
-        function showToast(msg) {
+        function showToast(msg, type = 'success') {
             const toast = document.createElement('div');
-            toast.className = 'toast-enter bg-surface border border-brand p-3 rounded-lg text-sm font-bold text-white';
+            const borderColor = type === 'error' ? 'border-red-500' : 'border-brand';
+            toast.className = `toast-enter bg-surface border ${borderColor} p-3 rounded-lg text-sm font-bold text-white shadow-lg`;
             toast.innerText = msg;
             document.getElementById('toast-container').appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         }
 
+        // Validate Quantity function
+        function getValidQty() {
+            const qtyInput = document.getElementById('qty').value;
+            const qty = parseInt(qtyInput);
+            if (isNaN(qty) || qty <= 0) {
+                showToast("Please enter a valid quantity greater than 0!", "error");
+                return null;
+            }
+            return qty;
+        }
+
+        function updateBalanceDisplay() {
+            // Format number with commas and exactly 2 decimal places
+            document.getElementById('wallet-balance').innerText = `$${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
         document.getElementById('btn-buy').addEventListener('click', () => {
-            const qty = parseInt(document.getElementById('qty').value);
-            balance -= qty * currentPrice;
-            document.getElementById('wallet-balance').innerText = `$${balance.toLocaleString()}`;
-            transactions.unshift({ type: 'BUY', qty, price: currentPrice, total: qty * currentPrice });
-            showToast(`Bought ${qty} at $${currentPrice.toFixed(2)}`);
+            const qty = getValidQty();
+            if (!qty) return;
+            
+            const totalCost = qty * currentPrice;
+            if (balance < totalCost) {
+                showToast("Insufficient Balance!", "error");
+                return;
+            }
+
+            balance -= totalCost;
+            updateBalanceDisplay();
+            transactions.unshift({ type: 'BUY', qty, price: currentPrice, total: totalCost });
+            showToast(`Bought ${qty} unit(s) at $${currentPrice.toFixed(2)}`);
         });
 
         document.getElementById('btn-sell').addEventListener('click', () => {
-            const qty = parseInt(document.getElementById('qty').value);
-            balance += qty * currentPrice;
-            document.getElementById('wallet-balance').innerText = `$${balance.toLocaleString()}`;
-            transactions.unshift({ type: 'SELL', qty, price: currentPrice, total: qty * currentPrice });
-            showToast(`Sold ${qty} at $${currentPrice.toFixed(2)}`);
+            const qty = getValidQty();
+            if (!qty) return;
+            
+            const totalReturn = qty * currentPrice;
+            balance += totalReturn;
+            updateBalanceDisplay();
+            transactions.unshift({ type: 'SELL', qty, price: currentPrice, total: totalReturn });
+            showToast(`Sold ${qty} unit(s) at $${currentPrice.toFixed(2)}`);
         });
 
         // History Modals
         const histModal = document.getElementById('history-modal');
         const renderHistory = () => {
-            document.getElementById('history-table-body').innerHTML = transactions.map(t => `
-                <tr class="border-b border-white/5">
-                    <td class="px-4 py-3 font-bold ${t.type === 'BUY' ? 'text-green-400' : 'text-red-400'}">${t.type}</td>
-                    <td class="px-4 py-3">${t.qty}</td>
-                    <td class="px-4 py-3">$${t.price.toFixed(2)}</td>
-                    <td class="px-4 py-3">$${t.total.toFixed(2)}</td>
-                </tr>
-            `).join('');
+            const tbody = document.getElementById('history-table-body');
+            if (transactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">No transactions yet.</td></tr>`;
+            } else {
+                tbody.innerHTML = transactions.map(t => `
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                        <td class="px-4 py-3 font-bold ${t.type === 'BUY' ? 'text-green-400' : 'text-red-400'}">${t.type}</td>
+                        <td class="px-4 py-3">${t.qty}</td>
+                        <td class="px-4 py-3">$${t.price.toFixed(2)}</td>
+                        <td class="px-4 py-3">$${t.total.toFixed(2)}</td>
+                    </tr>
+                `).join('');
+            }
             histModal.classList.remove('hidden');
         };
         
         document.getElementById('mobile-history-btn').addEventListener('click', renderHistory);
         document.getElementById('desktop-history-btn').addEventListener('click', renderHistory);
         document.getElementById('close-history').addEventListener('click', () => histModal.classList.add('hidden'));
+        
+        // Close modal on clicking outside
+        histModal.addEventListener('click', (e) => {
+            if (e.target === histModal) histModal.classList.add('hidden');
+        });
+
 
         /* --- 4. Real Gemini Backend Connection --- */
         const chatBox = document.getElementById('chat-box');
@@ -272,22 +334,19 @@
 
         async function fetchGeminiResponse(userText) {
             try {
-                // Connecting to your actual backend deployed API
                 const response = await fetch(GEMINI_BACKEND_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // Ensure this JSON structure matches what your gemini.js expects
                     body: JSON.stringify({ message: userText }) 
                 });
                 
                 if (!response.ok) throw new Error("Network response was not ok");
                 const data = await response.json();
                 
-                // Return whatever key your backend sends the message under
                 return data.reply || data.response || data.message || "Done."; 
             } catch (error) {
                 console.error("AI fetch failed:", error);
-                return "Bhai, backend connect nahi hua. URL check karo apne HTML code mein (`GEMINI_BACKEND_URL`).";
+                return "Bhai, backend connect nahi hua. Agar aap locally test kar rahe hain, toh ensure karein ki server chalu hai aur CORS allowed hai.";
             }
         }
 
@@ -296,7 +355,10 @@
             if (!text) return;
 
             // 1. Add User Msg
-            chatBox.innerHTML += `<div class="flex justify-end"><div class="bg-brand text-white p-3 rounded-xl rounded-tr-none text-sm max-w-[85%]">${text}</div></div>`;
+            chatBox.innerHTML += `
+                <div class="flex justify-end">
+                    <div class="bg-brand text-white p-3 rounded-xl rounded-tr-none text-sm max-w-[85%] break-words shadow-sm">${text}</div>
+                </div>`;
             aiInput.value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -308,20 +370,22 @@
                     <div class="bg-background border border-border p-3 rounded-xl rounded-tl-none text-sm text-gray-500 animate-pulse">Thinking...</div>
                 </div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
-            lucide.createIcons();
+            lucide.createIcons(); // Ensure the bot icon loads in the loading state
 
             // 3. Get Real AI Response
             const aiResponseText = await fetchGeminiResponse(text);
 
             // 4. Replace Loading State with Real Response
-            document.getElementById(loadingId).remove();
+            const loadingElement = document.getElementById(loadingId);
+            if(loadingElement) loadingElement.remove();
+            
             chatBox.innerHTML += `
                 <div class="flex gap-3">
                     <div class="w-6 h-6 rounded bg-brand/20 flex items-center justify-center flex-shrink-0"><i data-lucide="bot" class="w-3 h-3 text-brand"></i></div>
-                    <div class="bg-background border border-border p-3 rounded-xl rounded-tl-none text-sm text-gray-300 max-w-[85%]">${aiResponseText}</div>
+                    <div class="bg-background border border-border p-3 rounded-xl rounded-tl-none text-sm text-gray-300 max-w-[85%] break-words shadow-sm">${aiResponseText}</div>
                 </div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
-            lucide.createIcons();
+            lucide.createIcons(); // Ensure the bot icon loads for the final response
         }
 
         aiSend.addEventListener('click', handleSendMsg);
