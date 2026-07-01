@@ -15,8 +15,9 @@
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        background: '#131722',
-                        surface: '#1E222D',
+                        background: '#0B0E14',
+                        surface: '#151924',
+                        surfaceHover: '#1E2332',
                         border: '#2A2E39',
                         brand: '#2962FF',
                         textMain: '#D1D4DC',
@@ -29,48 +30,63 @@
         }
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #131722; color: #D1D4DC; }
+        body { font-family: 'Inter', sans-serif; background-color: #0B0E14; color: #D1D4DC; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #2A2E39; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #787B86; }
         
+        .glass-panel {
+            background: rgba(21, 25, 36, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        .toast-enter { animation: slideIn 0.3s ease-out forwards; }
-        .mic-active { animation: pulse-red 1.5s infinite; color: #ef4444 !important; }
+        .toast-enter { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
+        .mic-active { animation: pulse-red 1.5s infinite; color: #ef4444 !important; }
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-            70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .asset-btn.active {
+            background-color: #1E2332;
+            border-left: 3px solid #2962FF;
         }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden text-sm">
+<body class="h-screen flex flex-col overflow-hidden text-sm selection:bg-brand selection:text-white">
 
     <!-- Top Navigation -->
-    <header class="h-14 border-b border-border bg-surface flex items-center justify-between px-4 shrink-0">
-        <div class="flex items-center gap-4">
-            <h1 class="text-lg font-bold text-white flex items-center gap-2">
-                <i data-lucide="activity" class="text-brand w-5 h-5"></i> ProTrade AI
+    <header class="h-16 border-b border-border bg-surface flex items-center justify-between px-6 shrink-0 z-10 shadow-md">
+        <div class="flex items-center gap-6">
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <div class="p-1.5 bg-brand/20 rounded-lg">
+                    <i data-lucide="activity" class="text-brand w-5 h-5"></i>
+                </div>
+                ProTrade <span class="text-brand">AI</span>
             </h1>
-            <div class="hidden md:flex gap-4 ml-6 text-textMuted font-medium">
-                <button class="text-white border-b-2 border-brand pb-4 mt-4">Trade</button>
-                <button class="hover:text-white transition-colors pb-4 mt-4" onclick="document.getElementById('history-modal').classList.remove('hidden')">Vault & History</button>
+            <div class="hidden md:flex gap-6 ml-6 text-textMuted font-medium h-full items-center">
+                <button class="text-white border-b-2 border-brand h-16 px-2 hover:text-white transition-colors">Terminal</button>
+                <button class="h-16 px-2 hover:text-white transition-colors" onclick="openModal('history-modal')">Portfolio & Vault</button>
             </div>
         </div>
-        <div class="flex items-center gap-4">
-            <div class="text-right mr-4 border-r border-border pr-4">
-                <p class="text-[10px] text-textMuted uppercase tracking-wider">Total Balance</p>
-                <p class="text-sm font-bold text-white" id="wallet-balance">$100,000.00</p>
+        <div class="flex items-center gap-5">
+            <div class="text-right mr-4">
+                <p class="text-[11px] text-textMuted uppercase tracking-wider font-semibold">Available Equity</p>
+                <p class="text-base font-bold text-white tracking-wide" id="wallet-balance">$100,000.00</p>
             </div>
-            <button id="toggle-ai-btn" class="p-2 bg-background hover:bg-border rounded-lg text-textMuted transition-colors" title="Toggle AI Panel">
+            <div class="h-8 w-px bg-border"></div>
+            <button id="toggle-ai-btn" class="p-2.5 bg-background hover:bg-surfaceHover rounded-xl text-textMuted hover:text-brand transition-all shadow-sm" title="Toggle AI Assistant">
                 <i data-lucide="bot" class="w-5 h-5"></i>
             </button>
-            <button id="settings-btn" class="p-2 bg-background hover:bg-border rounded-lg text-textMuted transition-colors" title="Settings">
+            <button id="settings-btn" class="p-2.5 bg-background hover:bg-surfaceHover rounded-xl text-textMuted hover:text-white transition-all shadow-sm" title="Settings">
                 <i data-lucide="settings" class="w-5 h-5"></i>
             </button>
         </div>
@@ -78,35 +94,29 @@
 
     <main class="flex-1 flex overflow-hidden">
         
-        <!-- Left Sidebar: Watchlist / Vault -->
-        <aside class="w-64 border-r border-border bg-surface flex flex-col hidden md:flex shrink-0">
-            <div class="p-3 border-b border-border font-semibold text-white">Watchlist</div>
+        <!-- Left Sidebar: Watchlist -->
+        <aside class="w-72 border-r border-border bg-surface flex flex-col hidden md:flex shrink-0">
+            <div class="p-4 border-b border-border flex justify-between items-center">
+                <span class="font-semibold text-white tracking-wide">Market Watch</span>
+                <i data-lucide="search" class="w-4 h-4 text-textMuted cursor-pointer hover:text-white"></i>
+            </div>
             <div class="flex-1 overflow-y-auto p-2 space-y-1" id="watchlist">
-                <button class="w-full flex justify-between p-2 rounded hover:bg-background bg-background border border-border text-left">
-                    <span class="font-bold text-white">XAU/USD</span>
-                    <span class="text-up">1952.00</span>
-                </button>
-                <button class="w-full flex justify-between p-2 rounded hover:bg-background text-left text-textMuted">
-                    <span class="font-bold">BTC/USD</span>
-                    <span class="text-up">64230.50</span>
-                </button>
-                <button class="w-full flex justify-between p-2 rounded hover:bg-background text-left text-textMuted">
-                    <span class="font-bold">AAPL</span>
-                    <span class="text-down">175.40</span>
-                </button>
+                <!-- Populated by JS -->
             </div>
         </aside>
 
         <!-- Center: Chart and Trading Panel -->
-        <div class="flex-1 flex flex-col min-w-0 bg-background relative">
+        <div class="flex-1 flex flex-col min-w-0 bg-background relative shadow-inner">
             <!-- Asset Header -->
-            <div class="p-3 border-b border-border flex justify-between items-center bg-surface shrink-0">
-                <div class="flex items-center gap-3">
-                    <h2 class="text-xl font-bold text-white">XAU/USD</h2>
-                    <span class="px-2 py-0.5 bg-up/10 text-up text-xs font-bold rounded">Live</span>
+            <div class="p-4 border-b border-border flex justify-between items-center bg-surface/50 shrink-0">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-2xl font-bold text-white" id="header-asset-name">XAU/USD</h2>
+                    <span class="px-2.5 py-1 bg-up/10 text-up text-xs font-bold rounded-md border border-up/20 animate-pulse">LIVE</span>
                 </div>
-                <div class="text-lg font-bold text-white flex gap-4">
-                    <span><span class="text-textMuted text-xs">PRICE: </span>$<span id="current-price-display">1952.00</span></span>
+                <div class="text-xl font-bold text-white flex items-center gap-2">
+                    <span class="text-textMuted text-sm font-medium mr-2">PRICE</span>
+                    $<span id="current-price-display">1952.00</span>
+                    <span id="price-change-indicator" class="text-sm ml-2"></span>
                 </div>
             </div>
 
@@ -114,18 +124,24 @@
             <div id="chart-container" class="flex-1 w-full min-h-[300px]"></div>
 
             <!-- Trading Controls -->
-            <div class="p-4 border-t border-border bg-surface shrink-0">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-4xl mx-auto">
-                    <div class="flex items-center gap-2 w-full sm:w-auto bg-background p-1 border border-border rounded-lg">
-                        <label class="text-xs font-medium text-textMuted pl-2">QTY</label>
-                        <input type="number" id="qty" value="1" min="1" class="w-24 bg-transparent text-white text-center font-bold py-2 focus:outline-none">
+            <div class="p-5 border-t border-border bg-surface shrink-0">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto">
+                    <div class="flex items-center gap-3 w-full sm:w-auto bg-background p-1.5 border border-border rounded-xl shadow-sm focus-within:border-brand/50 transition-colors">
+                        <label class="text-xs font-bold text-textMuted pl-3 uppercase tracking-wider">Amount</label>
+                        <input type="number" id="qty" value="1" min="1" step="0.1" class="w-28 bg-transparent text-white text-lg font-bold py-2 px-2 focus:outline-none">
+                        <span class="text-textMuted pr-3 font-medium text-xs" id="trade-asset-symbol">XAU</span>
                     </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <button id="btn-sell" class="flex-1 sm:w-40 bg-down hover:bg-red-600 text-white py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2">
-                            SELL
+                    
+                    <div class="flex items-center gap-3 w-full sm:w-auto flex-1 justify-end">
+                        <div class="text-right mr-4 hidden lg:block">
+                            <p class="text-xs text-textMuted mb-1">Required Margin</p>
+                            <p class="text-white font-semibold" id="required-margin">$1,952.00</p>
+                        </div>
+                        <button id="btn-sell" class="flex-1 sm:w-48 bg-down/10 border border-down/50 hover:bg-down text-down hover:text-white py-3.5 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
+                            <i data-lucide="arrow-down-right" class="w-5 h-5"></i> SELL
                         </button>
-                        <button id="btn-buy" class="flex-1 sm:w-40 bg-up hover:bg-green-600 text-white py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2">
-                            BUY
+                        <button id="btn-buy" class="flex-1 sm:w-48 bg-up/10 border border-up/50 hover:bg-up text-up hover:text-white py-3.5 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
+                            <i data-lucide="arrow-up-right" class="w-5 h-5"></i> BUY
                         </button>
                     </div>
                 </div>
@@ -133,31 +149,31 @@
         </div>
 
         <!-- Right Sidebar: AI Assistant -->
-        <aside id="ai-panel" class="w-full md:w-80 border-l border-border bg-surface flex flex-col shrink-0 transition-all duration-300">
-            <div class="p-3 border-b border-border bg-background flex justify-between items-center">
+        <aside id="ai-panel" class="w-full md:w-80 border-l border-border bg-surface flex flex-col shrink-0 transition-all duration-300 transform translate-x-0">
+            <div class="p-4 border-b border-border bg-surface flex justify-between items-center shadow-sm z-10">
                 <h3 class="font-bold text-white flex items-center gap-2">
-                    <i data-lucide="sparkles" class="w-4 h-4 text-brand"></i> Gemini AI
+                    <i data-lucide="sparkles" class="w-5 h-5 text-brand"></i> TradeGPT
                 </h3>
-                <span class="text-[10px] bg-brand/20 text-brand px-2 py-1 rounded">Active</span>
+                <span class="text-[10px] bg-brand/10 text-brand border border-brand/20 px-2 py-1 rounded font-bold uppercase tracking-wide">Online</span>
             </div>
             
-            <div id="chat-box" class="flex-1 p-3 overflow-y-auto space-y-4 text-sm">
-                <div class="flex gap-2">
-                    <div class="w-6 h-6 rounded bg-brand/20 flex items-center justify-center flex-shrink-0 mt-1">
-                        <i data-lucide="bot" class="w-3 h-3 text-brand"></i>
+            <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-5 text-sm bg-background/50">
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-brand/20 flex items-center justify-center flex-shrink-0 border border-brand/30 shadow-sm">
+                        <i data-lucide="bot" class="w-4 h-4 text-brand"></i>
                     </div>
-                    <div class="bg-background border border-border p-2 rounded-lg rounded-tl-none text-textMain">
-                        System Ready. Aap voice ya text ke through market analysis pooch sakte hain.
+                    <div class="bg-surface border border-border p-3 rounded-2xl rounded-tl-none text-textMain shadow-sm leading-relaxed">
+                        Welcome to ProTrade AI. I am your advanced trading assistant. You can ask me for market analysis, support/resistance levels, or risk management advice.
                     </div>
                 </div>
             </div>
 
-            <div class="p-3 border-t border-border bg-background flex items-center gap-2">
-                <button id="voice-btn" class="p-2 text-textMuted hover:text-white bg-surface rounded-lg transition-colors hidden" title="Hold to speak">
-                    <i data-lucide="mic" class="w-4 h-4"></i>
+            <div class="p-3 border-t border-border bg-surface flex items-center gap-2">
+                <button id="voice-btn" class="p-2.5 text-textMuted hover:text-white bg-background rounded-xl transition-colors hidden shadow-sm border border-border hover:border-textMuted" title="Click to speak">
+                    <i data-lucide="mic" class="w-5 h-5"></i>
                 </button>
-                <input type="text" id="ai-input" placeholder="Ask AI..." autocomplete="off" class="flex-1 bg-surface border border-border text-white rounded-lg px-3 py-2 focus:outline-none focus:border-brand">
-                <button id="ai-send" class="bg-brand text-white p-2 rounded-lg hover:bg-blue-600 transition-colors">
+                <input type="text" id="ai-input" placeholder="Message TradeGPT..." autocomplete="off" class="flex-1 bg-background border border-border text-white rounded-xl px-4 py-3 focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/50 transition-all shadow-inner">
+                <button id="ai-send" class="bg-brand text-white p-3 rounded-xl hover:bg-blue-600 transition-colors shadow-md shadow-brand/20">
                     <i data-lucide="send" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -165,17 +181,17 @@
     </main>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-center p-4 backdrop-blur-sm">
-        <div class="bg-surface border border-border rounded-xl w-full max-w-sm flex flex-col">
-            <div class="p-4 border-b border-border flex justify-between items-center">
-                <h3 class="font-bold text-white">Settings</h3>
-                <button id="close-settings" class="text-textMuted hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div id="settings-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex justify-center items-center p-4 backdrop-blur-sm transition-opacity" onclick="closeModalOnOutsideClick(event, 'settings-modal')">
+        <div class="glass-panel border border-border rounded-2xl w-full max-w-sm flex flex-col shadow-2xl transform transition-transform">
+            <div class="p-5 border-b border-border/50 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-white">Terminal Settings</h3>
+                <button onclick="closeModal('settings-modal')" class="text-textMuted hover:text-white transition-colors p-1 bg-white/5 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-4 flex flex-col gap-4">
+            <div class="p-6 flex flex-col gap-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-white font-medium">Enable Voice Input</p>
-                        <p class="text-xs text-textMuted">Use microphone for AI chat</p>
+                        <p class="text-white font-medium">Voice Commands</p>
+                        <p class="text-xs text-textMuted mt-1">Enable microphone for AI chat</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="mic-toggle" class="sr-only peer">
@@ -187,46 +203,104 @@
     </div>
 
     <!-- History / Vault Modal -->
-    <div id="history-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-center p-4 backdrop-blur-sm">
-        <div class="bg-surface border border-border rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-            <div class="p-4 border-b border-border flex justify-between items-center">
-                <h3 class="font-bold text-lg text-white">Vault & Transaction History</h3>
-                <button id="close-history" class="text-textMuted hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div id="history-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex justify-center items-center p-4 backdrop-blur-sm transition-opacity" onclick="closeModalOnOutsideClick(event, 'history-modal')">
+        <div class="glass-panel border border-border rounded-2xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl">
+            <div class="p-5 border-b border-border/50 flex justify-between items-center">
+                <h3 class="font-bold text-xl text-white">Vault & Transaction History</h3>
+                <button onclick="closeModal('history-modal')" class="text-textMuted hover:text-white transition-colors p-1 bg-white/5 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-4 overflow-y-auto flex-1">
+            <div class="p-0 overflow-y-auto flex-1 rounded-b-2xl">
                 <table class="w-full text-sm text-left text-textMain">
-                    <thead class="text-xs text-textMuted bg-background uppercase border-b border-border">
+                    <thead class="text-xs text-textMuted bg-surface/80 uppercase border-b border-border/50 sticky top-0">
                         <tr>
-                            <th class="px-4 py-3">Type</th>
-                            <th class="px-4 py-3">Asset</th>
-                            <th class="px-4 py-3">Qty</th>
-                            <th class="px-4 py-3">Price</th>
-                            <th class="px-4 py-3">Total</th>
+                            <th class="px-6 py-4 font-semibold">Time</th>
+                            <th class="px-6 py-4 font-semibold">Type</th>
+                            <th class="px-6 py-4 font-semibold">Asset</th>
+                            <th class="px-6 py-4 font-semibold">Qty</th>
+                            <th class="px-6 py-4 font-semibold">Price</th>
+                            <th class="px-6 py-4 font-semibold text-right">Total Value</th>
                         </tr>
                     </thead>
                     <tbody id="history-table-body">
-                        <tr><td colspan="5" class="text-center py-6 text-textMuted">No transactions yet.</td></tr>
+                        <tr><td colspan="6" class="text-center py-10 text-textMuted flex flex-col items-center gap-2"><i data-lucide="inbox" class="w-8 h-8 opacity-50"></i> No transactions found in your vault.</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
 
     <script>
+        // 1. Initialize Icons
         lucide.createIcons();
 
-        /* --- 1. CONFIGURATION --- */
-        const GEMINI_BACKEND_URL = "http://localhost:3000/api/chat"; 
+        // 2. Global State & Data
+        let balance = 100000.00;
+        let transactions = [];
+        let activeAsset = 'XAU/USD';
+        let tickInterval;
+        
+        const assets = {
+            'XAU/USD': { price: 1952.00, volatility: 1.5, baseQty: 1 },
+            'BTC/USD': { price: 64230.50, volatility: 25.0, baseQty: 0.1 },
+            'AAPL': { price: 175.40, volatility: 0.5, baseQty: 10 }
+        };
 
-        /* --- 2. CHART LOGIC (FIXED) --- */
+        // 3. UI Helpers
+        function formatMoney(amount) {
+            return '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function showToast(title, msg, type = 'success') {
+            const toast = document.createElement('div');
+            const icon = type === 'error' ? 'alert-circle' : 'check-circle';
+            const colorClass = type === 'error' ? 'text-down' : 'text-up';
+            const borderClass = type === 'error' ? 'border-down' : 'border-up';
+            
+            toast.className = `toast-enter glass-panel border-l-4 ${borderClass} p-4 rounded-xl shadow-2xl text-white flex items-start gap-3 min-w-[300px]`;
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-5 h-5 ${colorClass} mt-0.5"></i>
+                <div>
+                    <h4 class="font-bold text-sm ${colorClass}">${title}</h4>
+                    <p class="text-xs text-textMuted mt-1">${msg}</p>
+                </div>
+            `;
+            document.getElementById('toast-container').appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Modals
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function closeModalOnOutsideClick(event, id) {
+            if (event.target.id === id) closeModal(id);
+        }
+        
+        document.getElementById('settings-btn').addEventListener('click', () => openModal('settings-modal'));
+
+        // Toggle AI Panel
+        const aiPanel = document.getElementById('ai-panel');
+        document.getElementById('toggle-ai-btn').addEventListener('click', () => {
+            aiPanel.classList.toggle('hidden');
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+        });
+
+        // 4. Charting Engine (Lightweight Charts)
         const chartContainer = document.getElementById('chart-container');
         const chart = LightweightCharts.createChart(chartContainer, {
-            layout: { background: { type: 'solid', color: '#131722' }, textColor: '#787B86' },
-            grid: { vertLines: { color: '#1E222D' }, horzLines: { color: '#1E222D' } },
-            timeScale: { timeVisible: true, borderVisible: false },
-            crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+            layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#787B86' },
+            grid: { vertLines: { color: '#1E2332' }, horzLines: { color: '#1E2332' } },
+            timeScale: { timeVisible: true, borderVisible: false, fixLeftEdge: true, fixRightEdge: true },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal, vertLine: { color: '#787B86', width: 1, style: 1 }, horzLine: { color: '#787B86', width: 1, style: 1 } },
+            rightPriceScale: { borderVisible: false }
         });
 
         const candlestickSeries = chart.addCandlestickSeries({
@@ -240,92 +314,157 @@
             chart.applyOptions({ width: newRect.width, height: newRect.height });
         }).observe(chartContainer);
 
-        // Generate Mock History Data Properly
-        let currentTime = Math.floor(Date.now() / 1000) - (100 * 60); 
-        let currentPrice = 1952.00;
-        const data = [];
-        
-        for (let i = 0; i < 100; i++) {
-            currentTime += 60; 
-            let open = currentPrice;
-            let close = open + (Math.random() - 0.5) * 4;
-            let high = Math.max(open, close) + Math.random() * 2;
-            let low = Math.min(open, close) - Math.random() * 2;
-            data.push({ time: currentTime, open, high, low, close });
-            currentPrice = close;
-        }
-        candlestickSeries.setData(data);
-        
-        // Live Engine Update
-        let tickCount = 0;
-        setInterval(() => {
-            currentPrice += (Math.random() - 0.5) * 1.5;
-            document.getElementById('current-price-display').innerText = currentPrice.toFixed(2);
-            document.title = `$${currentPrice.toFixed(2)} | ProTrade AI`;
+        let currentChartData = [];
+        let currentChartTime = 0;
+
+        function generateHistoricalData(price, volatility) {
+            const data = [];
+            let time = Math.floor(Date.now() / 1000) - (100 * 60);
+            let currentP = price;
             
-            const lastCandle = data[data.length - 1];
-            tickCount++;
-
-            if (tickCount > 10) {
-                currentTime += 60; 
-                const newCandle = { 
-                    time: currentTime, 
-                    open: lastCandle.close, 
-                    high: Math.max(lastCandle.close, currentPrice), 
-                    low: Math.min(lastCandle.close, currentPrice), 
-                    close: currentPrice 
-                };
-                data.push(newCandle);
-                candlestickSeries.update(newCandle);
-                tickCount = 0;
-            } else {
-                lastCandle.close = currentPrice;
-                if(currentPrice > lastCandle.high) lastCandle.high = currentPrice;
-                if(currentPrice < lastCandle.low) lastCandle.low = currentPrice;
-                candlestickSeries.update(lastCandle);
+            for (let i = 0; i < 100; i++) {
+                time += 60;
+                let open = currentP;
+                let close = open + (Math.random() - 0.5) * volatility * 3;
+                let high = Math.max(open, close) + Math.random() * volatility;
+                let low = Math.min(open, close) - Math.random() * volatility;
+                data.push({ time, open, high, low, close });
+                currentP = close;
             }
-        }, 1500);
-
-        /* --- 3. TRADING & VAULT --- */
-        let balance = 100000.00;
-        let transactions = [];
-
-        function showToast(msg, type = 'success') {
-            const toast = document.createElement('div');
-            const borderColor = type === 'error' ? 'border-down' : 'border-up';
-            toast.className = `toast-enter bg-surface border-l-4 ${borderColor} p-3 rounded shadow-lg text-white`;
-            toast.innerText = msg;
-            document.getElementById('toast-container').appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            return { data, lastTime: time, lastPrice: currentP };
         }
 
-        function getValidQty() {
-            const qty = parseInt(document.getElementById('qty').value);
-            if (isNaN(qty) || qty <= 0) {
-                showToast("Invalid quantity!", "error");
-                return null;
+        // 5. Market Logic & Asset Switching
+        function renderWatchlist() {
+            const list = document.getElementById('watchlist');
+            list.innerHTML = '';
+            for (const [symbol, data] of Object.entries(assets)) {
+                const isActive = symbol === activeAsset;
+                list.innerHTML += `
+                    <button onclick="switchAsset('${symbol}')" class="asset-btn w-full flex justify-between items-center p-3 rounded-lg hover:bg-surfaceHover transition-all ${isActive ? 'active' : ''}">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-[10px] font-bold text-textMuted">${symbol.split('/')[0].substring(0,3)}</div>
+                            <span class="font-bold text-white tracking-wide">${symbol}</span>
+                        </div>
+                        <span class="font-semibold text-white">${formatMoney(data.price)}</span>
+                    </button>
+                `;
             }
-            return qty;
         }
 
-        function updateBalanceDisplay() {
-            document.getElementById('wallet-balance').innerText = `$${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        function switchAsset(symbol) {
+            activeAsset = symbol;
+            const assetData = assets[symbol];
+            
+            // Update UI
+            document.getElementById('header-asset-name').innerText = symbol;
+            document.getElementById('trade-asset-symbol').innerText = symbol.split('/')[0];
+            document.getElementById('qty').value = assetData.baseQty;
+            renderWatchlist();
+            
+            // Update Chart Data
+            const history = generateHistoricalData(assetData.price, assetData.volatility);
+            currentChartData = history.data;
+            currentChartTime = history.lastTime;
+            assets[symbol].price = history.lastPrice;
+            
+            candlestickSeries.setData(currentChartData);
+            updatePriceUI(history.lastPrice);
+            chart.timeScale().fitContent();
+
+            // Restart Live Ticker
+            startLiveTicker();
+            updateRequiredMargin();
         }
+
+        function updatePriceUI(newPrice) {
+            const oldPrice = parseFloat(document.getElementById('current-price-display').innerText.replace(/,/g, ''));
+            const display = document.getElementById('current-price-display');
+            const indicator = document.getElementById('price-change-indicator');
+            
+            display.innerText = newPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.title = `${formatMoney(newPrice)} | ${activeAsset}`;
+            
+            if (newPrice > oldPrice) {
+                display.className = 'text-up transition-colors duration-300';
+                indicator.innerHTML = '<i data-lucide="trending-up" class="w-4 h-4 text-up"></i>';
+            } else if (newPrice < oldPrice) {
+                display.className = 'text-down transition-colors duration-300';
+                indicator.innerHTML = '<i data-lucide="trending-down" class="w-4 h-4 text-down"></i>';
+            }
+            lucide.createIcons();
+            
+            // Reset color after a brief moment
+            setTimeout(() => { display.className = 'text-white transition-colors duration-1000'; }, 500);
+        }
+
+        function startLiveTicker() {
+            if (tickInterval) clearInterval(tickInterval);
+            let tickCount = 0;
+            
+            tickInterval = setInterval(() => {
+                const asset = assets[activeAsset];
+                const change = (Math.random() - 0.5) * asset.volatility;
+                asset.price += change;
+                
+                updatePriceUI(asset.price);
+                updateRequiredMargin();
+
+                const lastCandle = currentChartData[currentChartData.length - 1];
+                tickCount++;
+
+                if (tickCount > 15) { // New minute candle
+                    currentChartTime += 60; 
+                    const newCandle = { 
+                        time: currentChartTime, 
+                        open: lastCandle.close, 
+                        high: Math.max(lastCandle.close, asset.price), 
+                        low: Math.min(lastCandle.close, asset.price), 
+                        close: asset.price 
+                    };
+                    currentChartData.push(newCandle);
+                    candlestickSeries.update(newCandle);
+                    tickCount = 0;
+                } else {
+                    lastCandle.close = asset.price;
+                    if(asset.price > lastCandle.high) lastCandle.high = asset.price;
+                    if(asset.price < lastCandle.low) lastCandle.low = asset.price;
+                    candlestickSeries.update(lastCandle);
+                }
+            }, 1000);
+        }
+
+        // 6. Trading Engine
+        function updateRequiredMargin() {
+            const qty = parseFloat(document.getElementById('qty').value) || 0;
+            const total = qty * assets[activeAsset].price;
+            document.getElementById('required-margin').innerText = formatMoney(total);
+        }
+
+        document.getElementById('qty').addEventListener('input', updateRequiredMargin);
 
         function executeTrade(type) {
-            const qty = getValidQty();
-            if (!qty) return;
+            const qty = parseFloat(document.getElementById('qty').value);
+            if (isNaN(qty) || qty <= 0) {
+                showToast("Order Failed", "Please enter a valid quantity.", "error");
+                return;
+            }
             
-            const total = qty * currentPrice;
+            const currentP = assets[activeAsset].price;
+            const total = qty * currentP;
+            
             if (type === 'BUY' && balance < total) {
-                showToast("Insufficient Balance!", "error");
+                showToast("Order Rejected", "Insufficient equity to execute this trade.", "error");
                 return;
             }
 
             balance = type === 'BUY' ? balance - total : balance + total;
-            updateBalanceDisplay();
-            transactions.unshift({ type, asset: 'XAU/USD', qty, price: currentPrice, total });
-            showToast(`${type} ${qty} XAU/USD at $${currentPrice.toFixed(2)}`, type === 'BUY' ? 'success' : 'error');
+            document.getElementById('wallet-balance').innerText = formatMoney(balance);
+            
+            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            transactions.unshift({ time: timeStr, type, asset: activeAsset, qty, price: currentP, total });
+            
+            showToast("Order Executed", `Successfully ${type === 'BUY' ? 'bought' : 'sold'} ${qty} ${activeAsset.split('/')[0]} at ${formatMoney(currentP)}`, "success");
             renderHistory();
         }
 
@@ -336,88 +475,88 @@
             const tbody = document.getElementById('history-table-body');
             if (transactions.length === 0) return;
             tbody.innerHTML = transactions.map(t => `
-                <tr class="border-b border-border hover:bg-background transition-colors">
-                    <td class="px-4 py-3 font-bold ${t.type === 'BUY' ? 'text-up' : 'text-down'}">${t.type}</td>
-                    <td class="px-4 py-3 text-white">${t.asset}</td>
-                    <td class="px-4 py-3">${t.qty}</td>
-                    <td class="px-4 py-3">$${t.price.toFixed(2)}</td>
-                    <td class="px-4 py-3">$${t.total.toFixed(2)}</td>
+                <tr class="border-b border-border/50 hover:bg-surface transition-colors">
+                    <td class="px-6 py-4 text-textMuted">${t.time}</td>
+                    <td class="px-6 py-4 font-bold ${t.type === 'BUY' ? 'text-up' : 'text-down'} bg-${t.type === 'BUY' ? 'up' : 'down'}/5 rounded">${t.type}</td>
+                    <td class="px-6 py-4 text-white font-medium">${t.asset}</td>
+                    <td class="px-6 py-4">${t.qty}</td>
+                    <td class="px-6 py-4">${formatMoney(t.price)}</td>
+                    <td class="px-6 py-4 text-right font-bold text-white">${formatMoney(t.total)}</td>
                 </tr>
             `).join('');
         }
 
-        // Modals Logic
-        document.getElementById('close-history').addEventListener('click', () => document.getElementById('history-modal').classList.add('hidden'));
-        document.getElementById('settings-btn').addEventListener('click', () => document.getElementById('settings-modal').classList.remove('hidden'));
-        document.getElementById('close-settings').addEventListener('click', () => document.getElementById('settings-modal').classList.add('hidden'));
-        
-        // Hide/Show AI UI
-        const aiPanel = document.getElementById('ai-panel');
-        document.getElementById('toggle-ai-btn').addEventListener('click', () => {
-            if (aiPanel.classList.contains('hidden')) {
-                aiPanel.classList.remove('hidden');
-            } else {
-                aiPanel.classList.add('hidden');
-            }
-            // Trigger chart resize
-            setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
-        });
-
-        /* --- 4. AI CHAT & VOICE --- */
+        // 7. Advanced AI Chat (Mock Fallback with natural typing)
         const chatBox = document.getElementById('chat-box');
         const aiInput = document.getElementById('ai-input');
         
-        async function fetchGeminiResponse(userText) {
-            try {
-                const response = await fetch(GEMINI_BACKEND_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: userText }) 
-                });
-                if (!response.ok) throw new Error("Network response was not ok");
-                const data = await response.json();
-                return data.reply || data.response || data.message; 
-            } catch (error) {
-                // FALLBACK: So the UI doesn't look broken if backend is off
-                return "Abhi backend offline hai, par aapne pucha: '" + userText + "'. Market trend abhi volatile lag raha hai, support levels par dhyan dein.";
-            }
+        async function getSmartFallbackResponse(userText) {
+            const lowerText = userText.toLowerCase();
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    if (lowerText.includes('trend') || lowerText.includes('market')) {
+                        resolve(`Based on the chart data, **${activeAsset}** is currently experiencing high volatility. The immediate support level is around ${formatMoney(assets[activeAsset].price * 0.99)}, with resistance near ${formatMoney(assets[activeAsset].price * 1.01)}.`);
+                    } else if (lowerText.includes('buy') || lowerText.includes('sell')) {
+                        resolve(`I cannot provide direct financial advice, but consider using a Stop-Loss if you plan to trade **${activeAsset}** at its current price of ${formatMoney(assets[activeAsset].price)}.`);
+                    } else {
+                        resolve(`I understand you're asking about "${userText}". As TradeGPT, I'm analyzing the real-time order books for ${activeAsset}. Let me know if you need specific technical analysis.`);
+                    }
+                }, 1200 + Math.random() * 1000); // Simulate network latency
+            });
         }
 
-        async function handleSendMsg(text) {
+        async function handleSendMsg() {
+            const text = aiInput.value.trim();
             if (!text) return;
 
+            // User Message
             chatBox.innerHTML += `
-                <div class="flex justify-end mb-4">
-                    <div class="bg-surface border border-border text-white p-2 rounded-lg rounded-tr-none text-sm max-w-[85%] break-words">${text}</div>
+                <div class="flex justify-end">
+                    <div class="bg-brand text-white p-3 rounded-2xl rounded-tr-none text-sm max-w-[85%] break-words shadow-md">
+                        ${text}
+                    </div>
                 </div>`;
             aiInput.value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
 
+            // Loading Indicator
             const loadingId = 'loading-' + Date.now();
             chatBox.innerHTML += `
-                <div id="${loadingId}" class="flex gap-2 mb-4">
-                    <div class="w-6 h-6 rounded bg-brand/20 flex items-center justify-center flex-shrink-0 mt-1"><i data-lucide="bot" class="w-3 h-3 text-brand"></i></div>
-                    <div class="bg-background border border-border p-2 rounded-lg rounded-tl-none text-textMuted animate-pulse">Analyzing...</div>
+                <div id="${loadingId}" class="flex gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-brand/20 flex items-center justify-center flex-shrink-0 border border-brand/30"><i data-lucide="bot" class="w-4 h-4 text-brand"></i></div>
+                    <div class="bg-surface border border-border p-3 rounded-2xl rounded-tl-none text-textMuted flex items-center gap-1 shadow-sm">
+                        <span class="w-1.5 h-1.5 bg-textMuted rounded-full animate-bounce"></span>
+                        <span class="w-1.5 h-1.5 bg-textMuted rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                        <span class="w-1.5 h-1.5 bg-textMuted rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+                    </div>
                 </div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
             lucide.createIcons(); 
 
-            const aiResponseText = await fetchGeminiResponse(text);
+            // Get Response
+            const aiResponseText = await getSmartFallbackResponse(text);
 
+            // Replace Loading with actual message
             document.getElementById(loadingId).remove();
+            
+            // Format bold text for markdown-like feeling
+            const formattedText = aiResponseText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>');
+
             chatBox.innerHTML += `
-                <div class="flex gap-2 mb-4">
-                    <div class="w-6 h-6 rounded bg-brand/20 flex items-center justify-center flex-shrink-0 mt-1"><i data-lucide="bot" class="w-3 h-3 text-brand"></i></div>
-                    <div class="bg-background border border-border p-2 rounded-lg rounded-tl-none text-textMain max-w-[85%] break-words">${aiResponseText}</div>
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-brand/20 flex items-center justify-center flex-shrink-0 border border-brand/30"><i data-lucide="bot" class="w-4 h-4 text-brand"></i></div>
+                    <div class="bg-surface border border-border p-3 rounded-2xl rounded-tl-none text-textMain max-w-[85%] break-words shadow-sm leading-relaxed">
+                        ${formattedText}
+                    </div>
                 </div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
             lucide.createIcons(); 
         }
 
-        document.getElementById('ai-send').addEventListener('click', () => handleSendMsg(aiInput.value.trim()));
-        aiInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSendMsg(aiInput.value.trim()); });
+        document.getElementById('ai-send').addEventListener('click', handleSendMsg);
+        aiInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSendMsg(); });
 
-        /* --- 5. VOICE RECOGNITION --- */
+        // 8. Voice Recognition Logic
         const micToggle = document.getElementById('mic-toggle');
         const voiceBtn = document.getElementById('voice-btn');
         let recognition = null;
@@ -427,18 +566,18 @@
             recognition = new SpeechRecognition();
             recognition.continuous = false;
             recognition.interimResults = false;
-            recognition.lang = 'hi-IN'; // Set to Hindi/English mixed
+            recognition.lang = 'en-US'; 
 
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript;
                 aiInput.value = transcript;
                 voiceBtn.classList.remove('mic-active');
-                handleSendMsg(transcript);
+                handleSendMsg();
             };
 
-            recognition.onerror = function() {
+            recognition.onerror = function(event) {
                 voiceBtn.classList.remove('mic-active');
-                showToast("Microphone error or permission denied.", "error");
+                showToast("Microphone Error", "Permission denied or mic not found. Check browser settings.", "error");
             };
 
             recognition.onend = function() {
@@ -449,7 +588,7 @@
         micToggle.addEventListener('change', (e) => {
             if(e.target.checked) {
                 voiceBtn.classList.remove('hidden');
-                if(!recognition) showToast("Your browser doesn't support Voice AI", "error");
+                if(!recognition) showToast("Not Supported", "Your browser doesn't support Voice AI.", "error");
             } else {
                 voiceBtn.classList.add('hidden');
             }
@@ -457,10 +596,17 @@
 
         voiceBtn.addEventListener('click', () => {
             if(recognition) {
-                voiceBtn.classList.add('mic-active');
-                recognition.start();
+                try {
+                    voiceBtn.classList.add('mic-active');
+                    recognition.start();
+                } catch(e) {
+                    showToast("Error", "Speech recognition already running or blocked.", "error");
+                }
             }
         });
+
+        // Initialize App
+        switchAsset('XAU/USD');
 
     </script>
 </body>
