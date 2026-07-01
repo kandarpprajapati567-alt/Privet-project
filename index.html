@@ -6,7 +6,8 @@
     <title>ProTrade AI - Next Gen Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <script>
@@ -63,7 +64,6 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-sm selection:bg-brand selection:text-white">
 
-    <!-- Top Navigation -->
     <header class="h-16 border-b border-border bg-surface flex items-center justify-between px-6 shrink-0 z-10 shadow-md">
         <div class="flex items-center gap-6">
             <h1 class="text-xl font-bold text-white flex items-center gap-2">
@@ -94,20 +94,16 @@
 
     <main class="flex-1 flex overflow-hidden">
         
-        <!-- Left Sidebar: Watchlist -->
         <aside class="w-72 border-r border-border bg-surface flex flex-col hidden md:flex shrink-0">
             <div class="p-4 border-b border-border flex justify-between items-center">
                 <span class="font-semibold text-white tracking-wide">Market Watch</span>
                 <i data-lucide="search" class="w-4 h-4 text-textMuted cursor-pointer hover:text-white"></i>
             </div>
             <div class="flex-1 overflow-y-auto p-2 space-y-1" id="watchlist">
-                <!-- Populated by JS -->
-            </div>
+                </div>
         </aside>
 
-        <!-- Center: Chart and Trading Panel -->
         <div class="flex-1 flex flex-col min-w-0 bg-background relative shadow-inner">
-            <!-- Asset Header -->
             <div class="p-4 border-b border-border flex justify-between items-center bg-surface/50 shrink-0">
                 <div class="flex items-center gap-4">
                     <h2 class="text-2xl font-bold text-white" id="header-asset-name">XAU/USD</h2>
@@ -120,10 +116,8 @@
                 </div>
             </div>
 
-            <!-- Chart Container -->
-            <div id="chart-container" class="flex-1 w-full min-h-[300px]"></div>
+            <div id="chart-container" class="flex-1 w-full h-full min-h-[300px]"></div>
 
-            <!-- Trading Controls -->
             <div class="p-5 border-t border-border bg-surface shrink-0">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto">
                     <div class="flex items-center gap-3 w-full sm:w-auto bg-background p-1.5 border border-border rounded-xl shadow-sm focus-within:border-brand/50 transition-colors">
@@ -148,7 +142,6 @@
             </div>
         </div>
 
-        <!-- Right Sidebar: AI Assistant -->
         <aside id="ai-panel" class="w-full md:w-80 border-l border-border bg-surface flex flex-col shrink-0 transition-all duration-300 transform translate-x-0">
             <div class="p-4 border-b border-border bg-surface flex justify-between items-center shadow-sm z-10">
                 <h3 class="font-bold text-white flex items-center gap-2">
@@ -180,7 +173,6 @@
         </aside>
     </main>
 
-    <!-- Settings Modal -->
     <div id="settings-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex justify-center items-center p-4 backdrop-blur-sm transition-opacity" onclick="closeModalOnOutsideClick(event, 'settings-modal')">
         <div class="glass-panel border border-border rounded-2xl w-full max-w-sm flex flex-col shadow-2xl transform transition-transform">
             <div class="p-5 border-b border-border/50 flex justify-between items-center">
@@ -202,7 +194,6 @@
         </div>
     </div>
 
-    <!-- History / Vault Modal -->
     <div id="history-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex justify-center items-center p-4 backdrop-blur-sm transition-opacity" onclick="closeModalOnOutsideClick(event, 'history-modal')">
         <div class="glass-panel border border-border rounded-2xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl">
             <div class="p-5 border-b border-border/50 flex justify-between items-center">
@@ -229,7 +220,6 @@
         </div>
     </div>
 
-    <!-- Toast Notifications Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
 
     <script>
@@ -295,8 +285,13 @@
 
         // 4. Charting Engine (Lightweight Charts)
         const chartContainer = document.getElementById('chart-container');
+        
+        // FIXED: Using LightweightCharts.ColorType.Solid to fix the render bug
         const chart = LightweightCharts.createChart(chartContainer, {
-            layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#787B86' },
+            layout: { 
+                background: { type: LightweightCharts.ColorType.Solid, color: '#0B0E14' }, 
+                textColor: '#787B86' 
+            },
             grid: { vertLines: { color: '#1E2332' }, horzLines: { color: '#1E2332' } },
             timeScale: { timeVisible: true, borderVisible: false, fixLeftEdge: true, fixRightEdge: true },
             crosshair: { mode: LightweightCharts.CrosshairMode.Normal, vertLine: { color: '#787B86', width: 1, style: 1 }, horzLine: { color: '#787B86', width: 1, style: 1 } },
