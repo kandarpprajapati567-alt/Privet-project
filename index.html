@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProTrade AI - Next Gen Terminal</title>
+    
+    <title>ProTrade AI - Next Gen Trading Terminal & AI Teacher</title>
+    <meta name="description" content="ProTrade AI is a next-generation trading terminal featuring real-time market data, advanced charting, and a built-in Gemini AI Trading Teacher for live mentoring.">
+    <meta name="keywords" content="Trading Terminal, AI Trading, Gemini AI, Stock Market India, NIFTY 50, Paper Trading, Trading Education">
+    <meta name="author" content="Your Name/Company">
+    
+    <meta property="og:title" content="ProTrade AI - Next Gen Trading Terminal">
+    <meta property="og:description" content="Learn and trade with your personal Gemini AI Trading Teacher.">
+    <meta property="og:type" content="website">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -21,7 +30,7 @@
                         surfaceHover: '#1E2332',
                         border: '#2A2E39',
                         brand: '#2962FF',
-                        teacher: '#8A2BE2', /* Purple theme for Gemini Teacher */
+                        teacher: '#8A2BE2', 
                         textMain: '#D1D4DC',
                         textMuted: '#787B86',
                         up: '#089981',
@@ -41,34 +50,30 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .glass-panel {
-            background: rgba(21, 25, 36, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
         .toast-enter { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
-        .mic-active { animation: pulse-red 1.5s infinite; color: #ef4444 !important; }
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-
         .asset-btn.active {
             background-color: #1E2332;
             border-left: 3px solid #2962FF;
+        }
+
+        /* Smooth AI panel transition */
+        #ai-panel {
+            transition: margin-right 0.3s ease-in-out, opacity 0.3s ease;
+        }
+        .ai-hidden {
+            margin-right: -20rem; /* Hides the 80 (20rem) width panel */
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-sm selection:bg-brand selection:text-white">
 
-    <!-- Header -->
     <header class="h-16 border-b border-border bg-surface flex items-center justify-between px-6 shrink-0 z-10 shadow-md">
         <div class="flex items-center gap-6">
             <h1 class="text-xl font-bold text-white flex items-center gap-2">
@@ -79,7 +84,7 @@
             </h1>
             <div class="hidden md:flex gap-6 ml-6 text-textMuted font-medium h-full items-center">
                 <button class="text-white border-b-2 border-brand h-16 px-2 transition-colors">Terminal</button>
-                <button class="h-16 px-2 hover:text-white transition-colors" onclick="openModal('history-modal')">Portfolio & Vault</button>
+                <button class="h-16 px-2 hover:text-white transition-colors" onclick="toggleModal('history-modal', true)">Portfolio & Vault</button>
             </div>
         </div>
         <div class="flex items-center gap-5">
@@ -88,10 +93,10 @@
                 <p class="text-base font-bold text-white tracking-wide" id="wallet-balance">₹1,000,000.00</p>
             </div>
             <div class="h-8 w-px bg-border"></div>
-            <button id="toggle-ai-btn" class="p-2.5 bg-teacher/10 hover:bg-teacher/20 rounded-xl text-teacher transition-all shadow-sm border border-teacher/20" title="Toggle Trading Teacher">
+            <button id="toggle-ai-btn" onclick="toggleAI()" class="p-2.5 bg-teacher/10 hover:bg-teacher/20 rounded-xl text-teacher transition-all shadow-sm border border-teacher/20" title="Toggle Trading Teacher">
                 <i data-lucide="graduation-cap" class="w-5 h-5"></i>
             </button>
-            <button id="settings-btn" class="p-2.5 bg-background hover:bg-surfaceHover rounded-xl text-textMuted hover:text-white transition-all shadow-sm" title="Settings">
+            <button class="p-2.5 bg-background hover:bg-surfaceHover rounded-xl text-textMuted hover:text-white transition-all shadow-sm" title="Settings">
                 <i data-lucide="settings" class="w-5 h-5"></i>
             </button>
         </div>
@@ -99,50 +104,42 @@
 
     <main class="flex-1 flex overflow-hidden">
         
-        <!-- Market Watch Sidebar -->
-        <aside class="w-72 border-r border-border bg-surface flex flex-col hidden md:flex shrink-0">
+        <aside class="w-72 border-r border-border bg-surface flex flex-col hidden md:flex shrink-0 z-10">
             <div class="p-4 border-b border-border flex justify-between items-center bg-background/50">
                 <span class="font-semibold text-white tracking-wide">Market Watch</span>
                 <i data-lucide="search" class="w-4 h-4 text-textMuted cursor-pointer hover:text-white"></i>
             </div>
             <div class="flex-1 overflow-y-auto p-2 space-y-1" id="watchlist">
-                <!-- Assets dynamically injected here -->
-            </div>
+                </div>
         </aside>
 
-        <!-- Main Chart & Trading Area -->
         <div class="flex-1 flex flex-col min-w-0 bg-background relative shadow-inner">
             <div class="p-4 border-b border-border flex justify-between items-center bg-surface/50 shrink-0">
                 <div class="flex items-center gap-4">
-                    <h2 class="text-2xl font-bold text-white" id="header-asset-name">NIFTY 50</h2>
+                    <h2 class="text-2xl font-bold text-white" id="header-asset-name">NIFTY50</h2>
                     <span class="px-2.5 py-1 bg-up/10 text-up text-xs font-bold rounded-md border border-up/20 animate-pulse">LIVE</span>
                 </div>
                 <div class="text-xl font-bold text-white flex items-center gap-2">
                     <span class="text-textMuted text-sm font-medium mr-2">PRICE</span>
-                    <span id="currency-symbol">₹</span><span id="current-price-display">24000.00</span>
-                    <span id="price-change-indicator" class="text-sm ml-2"></span>
+                    <span id="currency-symbol">₹</span><span id="current-price-display">24250.00</span>
                 </div>
             </div>
 
             <div id="chart-container" class="flex-1 w-full h-full min-h-[300px]"></div>
 
-            <div class="p-5 border-t border-border bg-surface shrink-0">
+            <div class="p-5 border-t border-border bg-surface shrink-0 z-10">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto">
                     <div class="flex items-center gap-3 w-full sm:w-auto bg-background p-1.5 border border-border rounded-xl shadow-sm focus-within:border-brand/50 transition-colors">
                         <label class="text-xs font-bold text-textMuted pl-3 uppercase tracking-wider">Qty</label>
                         <input type="number" id="qty" value="50" min="1" step="1" class="w-28 bg-transparent text-white text-lg font-bold py-2 px-2 focus:outline-none">
-                        <span class="text-textMuted pr-3 font-medium text-xs" id="trade-asset-symbol">NIFTY</span>
+                        <span class="text-textMuted pr-3 font-medium text-xs" id="trade-asset-symbol">NIFTY50</span>
                     </div>
                     
                     <div class="flex items-center gap-3 w-full sm:w-auto flex-1 justify-end">
-                        <div class="text-right mr-4 hidden lg:block">
-                            <p class="text-xs text-textMuted mb-1">Required Margin</p>
-                            <p class="text-white font-semibold" id="required-margin">₹1,200,000.00</p>
-                        </div>
-                        <button id="btn-sell" class="flex-1 sm:w-48 bg-down/10 border border-down/50 hover:bg-down text-down hover:text-white py-3.5 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
+                        <button onclick="executeTrade('SELL')" class="flex-1 sm:w-48 bg-down/10 border border-down/50 hover:bg-down text-down hover:text-white py-3.5 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
                             <i data-lucide="arrow-down-right" class="w-5 h-5"></i> SELL
                         </button>
-                        <button id="btn-buy" class="flex-1 sm:w-48 bg-up/10 border border-up/50 hover:bg-up text-up hover:text-white py-3.5 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
+                        <button onclick="executeTrade('BUY')" class="flex-1 sm:w-48 bg-up/10 border border-up/50 hover:bg-up text-up hover:text-white py-3.5 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
                             <i data-lucide="arrow-up-right" class="w-5 h-5"></i> BUY
                         </button>
                     </div>
@@ -150,13 +147,14 @@
             </div>
         </div>
 
-        <!-- Gemini Trading Teacher AI Panel -->
-        <aside id="ai-panel" class="w-full md:w-80 border-l border-border bg-surface flex flex-col shrink-0 transition-all duration-300 transform translate-x-0">
+        <aside id="ai-panel" class="w-full md:w-80 border-l border-border bg-surface flex flex-col shrink-0">
             <div class="p-4 border-b border-border bg-gradient-to-r from-surface to-teacher/10 flex justify-between items-center shadow-sm z-10">
                 <h3 class="font-bold text-white flex items-center gap-2">
                     <i data-lucide="sparkles" class="w-5 h-5 text-teacher"></i> Gemini Teacher
                 </h3>
-                <span class="text-[10px] bg-teacher/20 text-teacher border border-teacher/30 px-2 py-1 rounded font-bold uppercase tracking-wide">Live Mentoring</span>
+                <button onclick="toggleAI()" class="text-textMuted hover:text-white md:hidden">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
             
             <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-5 text-sm bg-background/50">
@@ -165,22 +163,17 @@
                         <i data-lucide="graduation-cap" class="w-4 h-4 text-teacher"></i>
                     </div>
                     <div class="bg-surface border border-border p-3 rounded-2xl rounded-tl-none text-textMain shadow-sm leading-relaxed">
-                        Namaste! Main Gemini hu, aapka personal Trading Teacher. Main live chart ko analyze kar sakta hu aur aapko candlestick patterns sikhne mein madad kar sakta hu. Kaha se shuru karein?
+                        Namaste! Main Gemini hu, aapka personal Trading Teacher. Main live chart ko analyze kar sakta hu. Kaha se shuru karein?
                     </div>
                 </div>
             </div>
 
-            <!-- Quick Prompts for Teacher -->
             <div class="flex gap-2 p-3 overflow-x-auto border-t border-border bg-surface shrink-0 hide-scrollbar" id="quick-prompts">
-                <button class="quick-prompt whitespace-nowrap px-3 py-1.5 bg-teacher/10 hover:bg-teacher/20 text-teacher text-xs font-medium rounded-lg border border-teacher/20 transition-colors" onclick="sendQuickPrompt('Analyze current live chart')">Analyze Chart</button>
-                <button class="quick-prompt whitespace-nowrap px-3 py-1.5 bg-teacher/10 hover:bg-teacher/20 text-teacher text-xs font-medium rounded-lg border border-teacher/20 transition-colors" onclick="sendQuickPrompt('What candlestick pattern is forming?')">Identify Pattern</button>
-                <button class="quick-prompt whitespace-nowrap px-3 py-1.5 bg-teacher/10 hover:bg-teacher/20 text-teacher text-xs font-medium rounded-lg border border-teacher/20 transition-colors" onclick="sendQuickPrompt('Explain Support and Resistance')">Learn S&R</button>
+                <button class="whitespace-nowrap px-3 py-1.5 bg-teacher/10 hover:bg-teacher/20 text-teacher text-xs font-medium rounded-lg border border-teacher/20 transition-colors" onclick="document.getElementById('ai-input').value = 'Analyze Chart';">Analyze Chart</button>
+                <button class="whitespace-nowrap px-3 py-1.5 bg-teacher/10 hover:bg-teacher/20 text-teacher text-xs font-medium rounded-lg border border-teacher/20 transition-colors" onclick="document.getElementById('ai-input').value = 'Identify Pattern';">Identify Pattern</button>
             </div>
 
             <div class="p-3 border-t border-border bg-surface flex items-center gap-2">
-                <button id="voice-btn" class="p-2.5 text-textMuted hover:text-teacher bg-background rounded-xl transition-colors hidden shadow-sm border border-border hover:border-teacher/50" title="Click to speak">
-                    <i data-lucide="mic" class="w-5 h-5"></i>
-                </button>
                 <input type="text" id="ai-input" placeholder="Ask your teacher..." autocomplete="off" class="flex-1 bg-background border border-border text-white rounded-xl px-4 py-3 focus:outline-none focus:border-teacher/50 focus:ring-1 focus:ring-teacher/50 transition-all shadow-inner">
                 <button id="ai-send" class="bg-teacher text-white p-3 rounded-xl hover:bg-purple-600 transition-colors shadow-md shadow-teacher/20">
                     <i data-lucide="send" class="w-4 h-4"></i>
@@ -189,39 +182,106 @@
         </aside>
     </main>
 
-    <!-- Modals (Settings & History) kept exactly the same as original to save space, assuming they are unchanged for UX -->
-    <!-- Add your modal divs here just like before -->
+    <div id="history-modal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center">
+        <div class="bg-surface border border-border w-[600px] max-w-full rounded-2xl p-6 shadow-2xl mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white">Portfolio & Vault</h2>
+                <button onclick="toggleModal('history-modal', false)" class="text-textMuted hover:text-white"><i data-lucide="x"></i></button>
+            </div>
+            <div class="text-center py-10 text-textMuted bg-background rounded-xl border border-border">
+                No active positions or trade history yet.
+            </div>
+        </div>
+    </div>
 
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
 
-    <!-- MAIN SCRIPT LOGIC -->
     <script>
+        // 1. Initialize Icons
         lucide.createIcons();
 
-        // Updated Assets with Indian Market
-        let balance = 1000000.00; // Updated to INR base for example
-        let transactions = [];
-        let activeAsset = 'NIFTY50';
-        let tickInterval;
-        
+        // 2. Base Data
+        let balance = 1000000.00;
         const assets = {
-            'NIFTY50': { price: 24250.00, volatility: 15.0, baseQty: 50, currency: '₹' },
-            'SENSEX': { price: 79800.00, volatility: 40.0, baseQty: 10, currency: '₹' },
-            'RELIANCE': { price: 2950.40, volatility: 3.5, baseQty: 10, currency: '₹' },
-            'HDFCBANK': { price: 1650.00, volatility: 2.0, baseQty: 10, currency: '₹' },
-            'BTC/USD': { price: 64230.50, volatility: 25.0, baseQty: 0.1, currency: '$' }
+            'NIFTY50': { price: 24250.00, currency: '₹' },
+            'SENSEX': { price: 79800.00, currency: '₹' },
+            'RELIANCE': { price: 2950.40, currency: '₹' },
+            'HDFCBANK': { price: 1650.00, currency: '₹' },
+            'BTC/USD': { price: 64230.50, currency: '$' }
         };
 
-        function formatMoney(amount, currency = '₹') {
-            return currency + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        // 3. Render Watchlist
+        const watchlistEl = document.getElementById('watchlist');
+        for (const [symbol, data] of Object.entries(assets)) {
+            const btn = document.createElement('button');
+            btn.className = `asset-btn w-full text-left p-3 rounded-xl mb-1 hover:bg-surfaceHover transition-colors border-l-[3px] border-transparent flex justify-between items-center ${symbol === 'NIFTY50' ? 'active' : ''}`;
+            btn.innerHTML = `
+                <div>
+                    <div class="font-bold text-white">${symbol}</div>
+                </div>
+                <div class="text-right">
+                    <div class="font-bold text-white">${data.currency}${data.price.toFixed(2)}</div>
+                </div>
+            `;
+            btn.onclick = () => changeAsset(symbol, btn);
+            watchlistEl.appendChild(btn);
         }
 
-        // Rest of your charting, UI, and trading logic remains exactly the same.
-        // It has been omitted here to keep the response concise, 
-        // but it smoothly connects with the new HTML elements.
+        // 4. Change Asset Logic
+        function changeAsset(symbol, buttonElement) {
+            document.querySelectorAll('.asset-btn').forEach(b => b.classList.remove('active'));
+            buttonElement.classList.add('active');
+            
+            document.getElementById('header-asset-name').innerText = symbol;
+            document.getElementById('trade-asset-symbol').innerText = symbol;
+            document.getElementById('currency-symbol').innerText = assets[symbol].currency;
+            document.getElementById('current-price-display').innerText = assets[symbol].price.toFixed(2);
+        }
+
+        // 5. Basic Chart Implementation (Lightweight Charts)
+        const chart = LightweightCharts.createChart(document.getElementById('chart-container'), {
+            layout: { background: { type: 'solid', color: '#0B0E14' }, textColor: '#D1D4DC' },
+            grid: { vertLines: { color: '#2A2E39' }, horzLines: { color: '#2A2E39' } },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+        });
+        const candleSeries = chart.addCandlestickSeries({ upColor: '#089981', downColor: '#F23645', borderVisible: false, wickUpColor: '#089981', wickDownColor: '#F23645' });
+        
+        // Mock Data for the chart so it's not empty
+        candleSeries.setData([
+            { time: '2026-07-01', open: 24000, high: 24300, low: 23900, close: 24200 },
+            { time: '2026-07-02', open: 24200, high: 24400, low: 24100, close: 24250 }
+        ]);
+
+        window.addEventListener('resize', () => { chart.resize(document.getElementById('chart-container').clientWidth, document.getElementById('chart-container').clientHeight); });
+
+        // 6. UI Interactions
+        function toggleAI() {
+            const panel = document.getElementById('ai-panel');
+            panel.classList.toggle('ai-hidden');
+        }
+
+        function toggleModal(id, show) {
+            const modal = document.getElementById(id);
+            if (show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+
+        function executeTrade(type) {
+            const qty = document.getElementById('qty').value;
+            const asset = document.getElementById('header-asset-name').innerText;
+            
+            // Show a visual notification toast
+            const toast = document.createElement('div');
+            toast.className = `toast-enter p-4 rounded-xl border font-bold text-white shadow-xl flex items-center gap-3 ${type === 'BUY' ? 'bg-up/20 border-up text-up' : 'bg-down/20 border-down text-down'}`;
+            toast.innerHTML = `<i data-lucide="${type === 'BUY' ? 'arrow-up-right' : 'arrow-down-right'}"></i> ${type} Order Placed: ${qty} x ${asset}`;
+            
+            document.getElementById('toast-container').appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
     </script>
     
-    <!-- Link to our future externalized Gemini AI logic -->
     <script src="gemini.js"></script>
 
 </body>
