@@ -5,16 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <title>ProTrade AI - Next Gen Trading Terminal & AI Teacher</title>
-    <meta name="description" content="Next-generation trading terminal with real-time TradingView charts and Gemini AI Teacher.">
     
-    <!-- Tailwind CSS for Styling -->
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- TradingView Widget Script -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <script>
         tailwind.config = {
@@ -58,27 +57,41 @@
             border-left: 3px solid #2962FF;
         }
 
-        /* Mobile Sidebar Transitions */
-        #mobile-sidebar { transition: transform 0.3s ease-in-out; }
-        .sidebar-hidden { transform: translateX(-100%); }
+        /* AI Panel & Mobile Menu Transitions */
+        .slide-panel { transition: transform 0.3s ease-in-out; }
         
-        /* AI Panel Transitions */
-        #ai-panel { transition: margin-right 0.3s ease-in-out, opacity 0.3s ease; }
-        .ai-hidden { margin-right: -24rem; opacity: 0; pointer-events: none; }
+        @media (max-width: 768px) {
+            #watchlist-sidebar {
+                position: absolute;
+                height: 100%;
+                z-index: 40;
+                transform: translateX(-100%);
+            }
+            #watchlist-sidebar.open { transform: translateX(0); }
+            
+            #ai-panel {
+                position: absolute;
+                height: 100%;
+                right: 0;
+                z-index: 40;
+                transform: translateX(100%);
+            }
+            #ai-panel.open { transform: translateX(0); }
+        }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden text-sm selection:bg-brand selection:text-white">
+<body class="h-screen flex flex-col overflow-hidden text-sm selection:bg-brand selection:text-white relative">
 
-    <!-- === HEADER === -->
-    <header class="h-16 border-b border-border bg-surface flex items-center justify-between px-4 sm:px-6 shrink-0 z-20 shadow-md">
-        <div class="flex items-center gap-4 sm:gap-6">
-            <!-- Mobile Menu Button -->
-            <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-textMuted hover:text-white transition-colors">
+    <!-- Header Area -->
+    <header class="h-16 border-b border-border bg-surface flex items-center justify-between px-4 sm:px-6 shrink-0 z-50 shadow-md">
+        <div class="flex items-center gap-4">
+            <!-- Mobile Menu Button for Market Watch -->
+            <button onclick="toggleMarketWatch()" class="md:hidden text-white hover:text-brand transition-colors">
                 <i data-lucide="menu" class="w-6 h-6"></i>
             </button>
             
             <h1 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-                <div class="p-1.5 bg-brand/20 rounded-lg">
+                <div class="p-1.5 bg-brand/20 rounded-lg hidden sm:block">
                     <i data-lucide="activity" class="text-brand w-5 h-5"></i>
                 </div>
                 ProTrade <span class="text-brand">AI</span>
@@ -96,61 +109,61 @@
                 <p class="text-base font-bold text-white tracking-wide" id="wallet-balance">₹1,000,000.00</p>
             </div>
             
-            <button id="toggle-ai-btn" onclick="toggleAI()" class="p-2 bg-teacher/10 hover:bg-teacher/20 rounded-xl text-teacher transition-all border border-teacher/20" title="Toggle AI Teacher">
-                <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+            <!-- AI Toggle Button -->
+            <button onclick="toggleAI()" class="p-2.5 bg-teacher/10 hover:bg-teacher/20 rounded-xl text-teacher transition-all shadow-sm border border-teacher/20" title="Toggle Trading Teacher">
+                <i data-lucide="graduation-cap" class="w-5 h-5 sm:w-6 sm:h-6"></i>
             </button>
+            
             <!-- Settings Button -->
-            <button onclick="toggleModal('settings-modal', true)" class="p-2 bg-background hover:bg-surfaceHover rounded-xl text-textMuted hover:text-white transition-all" title="Settings">
+            <button onclick="toggleModal('settings-modal', true)" class="p-2.5 bg-background hover:bg-surfaceHover rounded-xl text-textMuted hover:text-white transition-all shadow-sm" title="Settings">
                 <i data-lucide="settings" class="w-5 h-5"></i>
             </button>
         </div>
     </header>
 
-    <!-- === MAIN WORKSPACE === -->
+    <!-- Main Content Area -->
     <main class="flex-1 flex overflow-hidden relative">
         
-        <!-- Market Watch Sidebar (Responsive) -->
-        <aside id="mobile-sidebar" class="absolute md:relative z-30 w-64 md:w-72 h-full border-r border-border bg-surface flex flex-col sidebar-hidden md:transform-none shrink-0">
+        <!-- Market Watch Sidebar (Fixed for mobile) -->
+        <aside id="watchlist-sidebar" class="w-64 sm:w-72 border-r border-border bg-surface flex flex-col shrink-0 slide-panel md:relative md:transform-none">
             <div class="p-4 border-b border-border flex justify-between items-center bg-background/50">
                 <span class="font-semibold text-white tracking-wide">Market Watch</span>
-                <button onclick="toggleMobileSidebar()" class="md:hidden text-textMuted hover:text-white">
+                <!-- Close button for mobile -->
+                <button onclick="toggleMarketWatch()" class="md:hidden text-textMuted hover:text-white">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             <div class="flex-1 overflow-y-auto p-2 space-y-1" id="watchlist">
-                <!-- Assets dynamically injected via JS -->
+                <!-- Assets will be loaded here by JavaScript -->
             </div>
         </aside>
 
         <!-- Main Chart & Trading Area -->
-        <div class="flex-1 flex flex-col min-w-0 bg-background relative z-10 shadow-inner">
-            <!-- Asset Header -->
-            <div class="p-3 sm:p-4 border-b border-border flex justify-between items-center bg-surface/50 shrink-0">
-                <div class="flex items-center gap-3 sm:gap-4">
+        <div class="flex-1 flex flex-col min-w-0 bg-background relative shadow-inner">
+            <div class="p-4 border-b border-border flex justify-between items-center bg-surface/50 shrink-0">
+                <div class="flex items-center gap-4">
                     <h2 class="text-xl sm:text-2xl font-bold text-white" id="header-asset-name">NIFTY</h2>
-                    <span class="px-2.5 py-1 bg-up/10 text-up text-xs font-bold rounded-md border border-up/20 animate-pulse">LIVE</span>
+                    <span class="px-2 py-1 bg-up/10 text-up text-[10px] sm:text-xs font-bold rounded-md border border-up/20 animate-pulse">LIVE</span>
                 </div>
             </div>
 
-            <!-- TRADINGVIEW CHART CONTAINER -->
-            <div class="flex-1 w-full h-full min-h-[300px]">
-                <div id="tradingview_chart" class="w-full h-full"></div>
-            </div>
+            <!-- TradingView Chart Container -->
+            <div id="tv_chart_container" class="flex-1 w-full h-full min-h-[250px]"></div>
 
-            <!-- Trading Controls -->
-            <div class="p-4 border-t border-border bg-surface shrink-0 z-10">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto">
-                    <div class="flex items-center gap-3 w-full sm:w-auto bg-background p-1.5 border border-border rounded-xl focus-within:border-brand/50">
-                        <label class="text-xs font-bold text-textMuted pl-3 uppercase tracking-wider">Qty</label>
-                        <input type="number" id="qty" value="10" min="1" step="1" class="w-full sm:w-28 bg-transparent text-white text-lg font-bold py-2 px-2 focus:outline-none">
-                        <span class="text-textMuted pr-3 font-medium text-xs" id="trade-asset-symbol">NIFTY</span>
+            <!-- Buy/Sell Action Panel -->
+            <div class="p-3 sm:p-5 border-t border-border bg-surface shrink-0 z-10">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 max-w-5xl mx-auto">
+                    
+                    <div class="flex items-center gap-3 w-full sm:w-auto bg-background p-2 border border-border rounded-xl shadow-sm focus-within:border-brand/50 transition-colors">
+                        <label class="text-xs font-bold text-textMuted pl-2 sm:pl-3 uppercase tracking-wider">Qty</label>
+                        <input type="number" id="qty" value="50" min="1" step="1" class="w-full sm:w-28 bg-transparent text-white text-lg font-bold py-1 sm:py-2 px-2 focus:outline-none">
                     </div>
                     
-                    <div class="flex items-center gap-3 w-full sm:w-auto flex-1 sm:justify-end">
-                        <button onclick="executeTrade('SELL')" class="flex-1 sm:w-40 bg-down/10 border border-down/50 hover:bg-down text-down hover:text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                    <div class="flex items-center gap-3 w-full sm:w-auto flex-1 justify-end">
+                        <button onclick="executeTrade('SELL')" class="flex-1 sm:w-48 bg-down/10 border border-down/50 hover:bg-down text-down hover:text-white py-3 sm:py-3.5 rounded-xl font-bold text-base transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
                             <i data-lucide="arrow-down-right" class="w-5 h-5"></i> SELL
                         </button>
-                        <button onclick="executeTrade('BUY')" class="flex-1 sm:w-40 bg-up/10 border border-up/50 hover:bg-up text-up hover:text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                        <button onclick="executeTrade('BUY')" class="flex-1 sm:w-48 bg-up/10 border border-up/50 hover:bg-up text-up hover:text-white py-3 sm:py-3.5 rounded-xl font-bold text-base transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
                             <i data-lucide="arrow-up-right" class="w-5 h-5"></i> BUY
                         </button>
                     </div>
@@ -158,10 +171,10 @@
             </div>
         </div>
 
-        <!-- === GEMINI AI PANEL === -->
-        <aside id="ai-panel" class="absolute right-0 md:relative z-20 w-full sm:w-[24rem] h-full border-l border-border bg-surface flex flex-col shrink-0 ai-hidden">
-            <div class="p-4 border-b border-border bg-gradient-to-r from-surface to-teacher/10 flex justify-between items-center">
-                <h3 class="font-bold text-white flex items-center gap-2">
+        <!-- Gemini AI Teacher Panel -->
+        <aside id="ai-panel" class="w-80 sm:w-96 border-l border-border bg-surface flex flex-col shrink-0 slide-panel hidden md:flex md:transform-none">
+            <div class="p-4 border-b border-border bg-gradient-to-r from-surface to-teacher/10 flex justify-between items-center shadow-sm z-10">
+                <h3 class="font-bold text-white flex items-center gap-2 text-base">
                     <i data-lucide="sparkles" class="w-5 h-5 text-teacher"></i> Gemini Teacher
                 </h3>
                 <button onclick="toggleAI()" class="text-textMuted hover:text-white">
@@ -171,73 +184,62 @@
             
             <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-5 text-sm bg-background/50">
                 <div class="flex gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-teacher/20 flex items-center justify-center border border-teacher/30">
-                        <i data-lucide="graduation-cap" class="w-4 h-4 text-teacher"></i>
+                    <div class="w-10 h-10 rounded-xl bg-teacher/20 flex items-center justify-center flex-shrink-0 border border-teacher/30 shadow-sm">
+                        <i data-lucide="graduation-cap" class="w-6 h-6 text-teacher"></i>
                     </div>
-                    <div class="bg-surface border border-border p-3 rounded-2xl rounded-tl-none text-textMain leading-relaxed">
-                        Namaste! Main Gemini hu, aapka personal Trading Teacher. Main aapko chart patterns aur trading strategy sikhne mein madad karunga!
+                    <div class="bg-surface border border-border p-4 text-base rounded-2xl rounded-tl-none text-textMain shadow-sm leading-relaxed">
+                        Namaste! Main Gemini hu, aapka personal Trading Teacher. Main real-time chart ko analyze kar sakta hu. Puchiye aapko kya janna hai?
                     </div>
                 </div>
             </div>
 
-            <div class="flex gap-2 p-3 overflow-x-auto border-t border-border bg-surface hide-scrollbar" id="quick-prompts">
-                <button class="whitespace-nowrap px-3 py-1.5 bg-teacher/10 hover:bg-teacher/20 text-teacher text-xs font-medium rounded-lg border border-teacher/20" onclick="document.getElementById('ai-input').value = 'Analyze Chart';">Analyze Chart</button>
-                <button class="whitespace-nowrap px-3 py-1.5 bg-teacher/10 hover:bg-teacher/20 text-teacher text-xs font-medium rounded-lg border border-teacher/20" onclick="document.getElementById('ai-input').value = 'Support/Resistance?';">Find Support/Resistance</button>
+            <!-- Quick Prompts -->
+            <div class="flex gap-2 p-3 overflow-x-auto border-t border-border bg-surface shrink-0 hide-scrollbar">
+                <button class="whitespace-nowrap px-4 py-2 bg-teacher/10 hover:bg-teacher/20 text-teacher text-sm font-medium rounded-lg border border-teacher/20 transition-colors" onclick="document.getElementById('ai-input').value = 'Analyze Chart';">Analyze Chart</button>
+                <button class="whitespace-nowrap px-4 py-2 bg-teacher/10 hover:bg-teacher/20 text-teacher text-sm font-medium rounded-lg border border-teacher/20 transition-colors" onclick="document.getElementById('ai-input').value = 'Identify Pattern';">Identify Pattern</button>
             </div>
 
-            <div class="p-3 border-t border-border bg-surface flex items-center gap-2">
-                <input type="text" id="ai-input" placeholder="Ask your teacher..." class="flex-1 bg-background border border-border text-white rounded-xl px-4 py-3 focus:outline-none focus:border-teacher/50">
-                <button id="ai-send" class="bg-teacher text-white p-3 rounded-xl hover:bg-purple-600 transition-colors">
-                    <i data-lucide="send" class="w-4 h-4"></i>
+            <!-- Bigger AI Input Box -->
+            <div class="p-4 border-t border-border bg-surface flex items-center gap-3">
+                <input type="text" id="ai-input" placeholder="Ask Gemini..." autocomplete="off" class="flex-1 bg-background border border-border text-white text-base rounded-xl px-5 py-4 focus:outline-none focus:border-teacher/50 focus:ring-1 focus:ring-teacher/50 transition-all shadow-inner">
+                <button id="ai-send" class="bg-teacher text-white p-4 rounded-xl hover:bg-purple-600 transition-colors shadow-md flex items-center justify-center">
+                    <i data-lucide="send" class="w-6 h-6"></i>
                 </button>
             </div>
         </aside>
     </main>
 
-    <!-- === MODALS === -->
-    
     <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center backdrop-blur-sm px-4">
-        <div class="bg-surface border border-border w-full max-w-md rounded-2xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-6 border-b border-border pb-4">
-                <h2 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="settings"></i> Platform Settings</h2>
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-center justify-center">
+        <div class="bg-surface border border-border w-[400px] max-w-[90%] rounded-2xl p-6 shadow-2xl mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="settings" class="text-textMuted"></i> Settings</h2>
                 <button onclick="toggleModal('settings-modal', false)" class="text-textMuted hover:text-white"><i data-lucide="x"></i></button>
             </div>
             
             <div class="space-y-4">
-                <!-- Theme Setting -->
-                <div>
-                    <label class="block text-sm font-medium text-textMuted mb-2">Theme</label>
-                    <select class="w-full bg-background border border-border rounded-lg p-2.5 text-white outline-none focus:border-brand">
-                        <option>Dark Mode (Default)</option>
-                        <option>Light Mode (Coming Soon)</option>
-                    </select>
+                <div class="flex justify-between items-center p-3 bg-background rounded-lg border border-border">
+                    <span class="text-white">Dark Theme</span>
+                    <input type="checkbox" checked class="w-4 h-4 accent-brand">
                 </div>
-                
-                <!-- Default Trade Qty -->
-                <div>
-                    <label class="block text-sm font-medium text-textMuted mb-2">Default Trade Quantity</label>
-                    <input type="number" value="10" class="w-full bg-background border border-border rounded-lg p-2.5 text-white outline-none focus:border-brand">
+                <div class="flex justify-between items-center p-3 bg-background rounded-lg border border-border">
+                    <span class="text-white">Trade Notifications</span>
+                    <input type="checkbox" checked class="w-4 h-4 accent-brand">
                 </div>
-
-                <!-- API Key Configuration (For Vercel later) -->
-                <div>
-                    <label class="block text-sm font-medium text-textMuted mb-2">Backend API URL (Vercel)</label>
-                    <input type="text" placeholder="https://your-vercel-app.vercel.app/api/gemini" class="w-full bg-background border border-border rounded-lg p-2.5 text-white outline-none focus:border-brand">
-                    <p class="text-xs text-textMuted mt-1">Leave blank to use default configuration.</p>
+                <div class="flex justify-between items-center p-3 bg-background rounded-lg border border-border">
+                    <span class="text-white">Default NIFTY Qty</span>
+                    <input type="number" value="50" class="w-16 bg-surface border border-border text-white px-2 py-1 rounded text-center">
                 </div>
             </div>
-
-            <button onclick="toggleModal('settings-modal', false)" class="w-full mt-6 bg-brand hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors">
-                Save Changes
-            </button>
+            
+            <button onclick="toggleModal('settings-modal', false)" class="w-full mt-6 bg-brand hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-colors">Save Settings</button>
         </div>
     </div>
 
-    <!-- History Modal -->
-    <div id="history-modal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center px-4">
-        <div class="bg-surface border border-border w-full max-w-2xl rounded-2xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-6 border-b border-border pb-4">
+    <!-- Portfolio Modal -->
+    <div id="history-modal" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-center justify-center">
+        <div class="bg-surface border border-border w-[600px] max-w-[90%] rounded-2xl p-6 shadow-2xl mx-4">
+            <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold text-white">Portfolio & Vault</h2>
                 <button onclick="toggleModal('history-modal', false)" class="text-textMuted hover:text-white"><i data-lucide="x"></i></button>
             </div>
@@ -247,89 +249,103 @@
         </div>
     </div>
 
-    <div id="toast-container" class="fixed bottom-6 right-4 sm:right-6 z-50 flex flex-col gap-3"></div>
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[70] flex flex-col gap-3"></div>
 
-    <!-- === JAVASCRIPT === -->
     <script>
         // 1. Initialize Icons
         lucide.createIcons();
 
-        // 2. Data connecting to TradingView Symbols
-        // The values here refer to TradingView's official ticker symbols.
+        // 2. Base Market Data (TradingView Symbol codes added)
         const assets = {
-            'NIFTY': { tvSymbol: 'BSE:NIFTY', currency: '₹' },
-            'SENSEX': { tvSymbol: 'BSE:SENSEX', currency: '₹' },
-            'RELIANCE': { tvSymbol: 'BSE:RELIANCE', currency: '₹' },
-            'HDFCBANK': { tvSymbol: 'BSE:HDFCBANK', currency: '₹' },
-            'TCS': { tvSymbol: 'BSE:TCS', currency: '₹' },
-            'BTC/USD': { tvSymbol: 'BINANCE:BTCUSDT', currency: '$' }
+            'NIFTY': { tvSymbol: 'BSE:NIFTY', name: 'Nifty 50' },
+            'SENSEX': { tvSymbol: 'BSE:SENSEX', name: 'BSE Sensex' },
+            'RELIANCE': { tvSymbol: 'BSE:RELIANCE', name: 'Reliance Ind.' },
+            'HDFCBANK': { tvSymbol: 'BSE:HDFCBANK', name: 'HDFC Bank' },
+            'BTC/USD': { tvSymbol: 'BINANCE:BTCUSD', name: 'Bitcoin' }
         };
 
-        // 3. Render Watchlist dynamically
+        // 3. Render Market Watchlist
         const watchlistEl = document.getElementById('watchlist');
         for (const [symbol, data] of Object.entries(assets)) {
             const btn = document.createElement('button');
-            btn.className = `asset-btn w-full text-left p-3 rounded-xl mb-1 hover:bg-surfaceHover transition-colors border-l-[3px] border-transparent flex justify-between items-center ${symbol === 'NIFTY' ? 'active' : ''}`;
-            btn.innerHTML = `<span class="font-bold text-white">${symbol}</span>`;
-            btn.onclick = () => changeAsset(symbol, btn);
+            btn.className = `asset-btn w-full text-left p-3 sm:p-4 rounded-xl mb-2 hover:bg-surfaceHover transition-colors border-l-[3px] border-transparent flex justify-between items-center ${symbol === 'NIFTY' ? 'active' : ''}`;
+            btn.innerHTML = `
+                <div>
+                    <div class="font-bold text-white text-base">${symbol}</div>
+                    <div class="text-xs text-textMuted">${data.name}</div>
+                </div>
+            `;
+            btn.onclick = () => changeAsset(symbol, data.tvSymbol, btn);
             watchlistEl.appendChild(btn);
         }
 
-        // 4. Load TradingView Widget
-        let currentWidget = null;
-        function loadTradingViewChart(tvSymbol) {
-            // Clean up the old container so we can draw a new chart
-            document.getElementById('tradingview_chart').innerHTML = '';
-            
-            currentWidget = new TradingView.widget({
+        // 4. Change Asset & Load TradingView Chart
+        let widget = null;
+        
+        function loadTradingViewChart(symbolCode) {
+            widget = new TradingView.widget({
                 "autosize": true,
-                "symbol": tvSymbol,
-                "interval": "D",
+                "symbol": symbolCode,
+                "interval": "5",
                 "timezone": "Asia/Kolkata",
                 "theme": "dark",
-                "style": "1", // 1 = Candlestick
-                "locale": "in",
+                "style": "1",
+                "locale": "en",
                 "enable_publishing": false,
                 "backgroundColor": "#0B0E14",
                 "gridColor": "#2A2E39",
                 "hide_top_toolbar": false,
                 "hide_legend": false,
                 "save_image": false,
-                "container_id": "tradingview_chart"
+                "container_id": "tv_chart_container"
             });
         }
 
-        // Initialize default chart on load
-        loadTradingViewChart(assets['NIFTY'].tvSymbol);
-
-        // 5. Change Asset Logic
-        function changeAsset(symbol, buttonElement) {
-            // Update Active styling in Sidebar
+        function changeAsset(symbol, tvSymbol, buttonElement) {
+            // Update UI buttons
             document.querySelectorAll('.asset-btn').forEach(b => b.classList.remove('active'));
             buttonElement.classList.add('active');
             
             // Update Headers
             document.getElementById('header-asset-name').innerText = symbol;
-            document.getElementById('trade-asset-symbol').innerText = symbol;
             
-            // Reload TradingView Chart with new symbol
-            loadTradingViewChart(assets[symbol].tvSymbol);
-
-            // On mobile, close sidebar after clicking an asset
-            if (window.innerWidth < 768) {
-                toggleMobileSidebar();
+            // Close mobile menu if open
+            const sidebar = document.getElementById('watchlist-sidebar');
+            if (sidebar.classList.contains('open')) {
+                toggleMarketWatch();
             }
+
+            // Load the new chart
+            loadTradingViewChart(tvSymbol);
         }
 
-        // 6. UI Toggles (Sidebar, AI, Modals)
-        function toggleMobileSidebar() {
-            const sidebar = document.getElementById('mobile-sidebar');
-            sidebar.classList.toggle('sidebar-hidden');
+        // Initialize the first chart on page load
+        loadTradingViewChart(assets['NIFTY'].tvSymbol);
+
+        // 5. Mobile & UI Toggle Functions
+        function toggleMarketWatch() {
+            const sidebar = document.getElementById('watchlist-sidebar');
+            sidebar.classList.toggle('open');
         }
 
         function toggleAI() {
             const panel = document.getElementById('ai-panel');
-            panel.classList.toggle('ai-hidden');
+            
+            // On mobile, if it has 'hidden', we need to remove it to show it
+            if (window.innerWidth < 768) {
+                if (panel.classList.contains('hidden')) {
+                    panel.classList.remove('hidden');
+                    // Tiny delay to allow display:block to apply before animating transform
+                    setTimeout(() => panel.classList.add('open'), 10);
+                } else {
+                    panel.classList.remove('open');
+                    setTimeout(() => panel.classList.add('hidden'), 300); // match transition time
+                }
+            } else {
+                // Desktop toggle logic
+                panel.classList.toggle('hidden');
+            }
         }
 
         function toggleModal(id, show) {
@@ -338,11 +354,12 @@
             else modal.classList.add('hidden');
         }
 
-        // 7. Trade Execution (Visual Notification)
+        // 6. Buy/Sell Order Execution
         function executeTrade(type) {
             const qty = document.getElementById('qty').value;
             const asset = document.getElementById('header-asset-name').innerText;
             
+            // Visual notification toast
             const toast = document.createElement('div');
             toast.className = `toast-enter p-4 rounded-xl border font-bold text-white shadow-xl flex items-center gap-3 ${type === 'BUY' ? 'bg-up/20 border-up text-up' : 'bg-down/20 border-down text-down'}`;
             toast.innerHTML = `<i data-lucide="${type === 'BUY' ? 'arrow-up-right' : 'arrow-down-right'}"></i> ${type} Order Placed: ${qty} x ${asset}`;
@@ -350,11 +367,12 @@
             document.getElementById('toast-container').appendChild(toast);
             lucide.createIcons();
 
+            // Remove toast after 3 seconds
             setTimeout(() => { toast.remove(); }, 3000);
         }
     </script>
     
-    <!-- Link to your future gemini API logic -->
+    <!-- Next step: Add your gemini.js here when ready -->
     <script src="gemini.js"></script>
 
 </body>
